@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+<title>trace how lamport clocks synchronize in a distrbuted system</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	
+	const log = make_console('body')
+	let events = []
+	
+	make_test('lamport clock').suite(it => {
+		
+		it('one', () => {
+			
+			let a, b
+			a = make_peer('a')
+			b = make_peer('b')
+			a.send(a.add({ value: 'a1' }), b)
+			b.send(b.add({ value: 'b1' }), a)
+			a.send(a.add({ value: 'a2' }), b)
+			b.send(b.add({ value: 'b2' }), a)
+			console.log(`a.clock(): ${a.clock()}`)
+			console.log(`b.clock(): ${b.clock()}`)
+			print_events(events)
+			return true
+		})
+		
+		it('two', () => {
+			
+			let a, b, queue = []
+			a = make_peer('a')
+			b = make_peer('b')
+			queue.push(a.add({ value: 'a1' }))
+			queue.push(a.add({ value: 'a2' }))
+			queue.push(b.add({ value: 'b1' }))
+			queue.push(b.add({ value: 'b2' }))
+			a.send(queue[0], b)
+			a.send(queue[1], b)
+			b.send(queue[2], a)
+			b.send(queue[3], a)
+			console.log(`a.clock(): ${a.clock()}`)
+			console.log(`b.clock(): ${b.clock()}`)
+			print_events(events)
+			return true
+		})
+		
+		it('two b', () => {
+			
+			let a, b, queue = []
+			a = make_peer('a')
+			b = make_peer('b')
+			queue.push(a.add({ value: 'a1' }))
+			queue.push(a.add({ value: 'a2' }))
+			queue.push(a.add({ value: 'a3' }))
+			queue.push(b.add({ value: 'b1' }))
+			queue.push(b.add({ value: 'b2' }))
+			queue.push(b.add({ value: 'b3' }))
+			a.send(queue[0], b)
+			a.send(queue[1], b)
+			a.send(queue[2], b)
+			b.send(queue[3], a)
+			b.send(queue[4], a)
+			b.send(queue[5], a)
+			console.log(`a.clock(): ${a.clock()}`)
+			console.log(`b.clock(): ${b.clock()}`)
+			print_events(events)
+			return true
+		})
+		
+		it('three', () => {
+			
+			let a, b, queue = []
+			a = make_peer('a')
+			b = make_peer('b')
+			queue.push(a.add({ value: 'a1' }))
+			queue.push(a.add({ value: 'a2' }))
+			queue.push(a.add({ value: 'a3' }))
+			queue.push(b.add({ value: 'b1' }))
+			queue.push(b.add({ value: 'b2' }))
+			queue.push(b.add({ value: 'b3' }))
+			queue.push(a.add({ value: 'a4' }))
+			queue.push(a.add({ value: 'a5' }))
+			queue.push(a.add({ value: 'a6' }))
+			a.send(queue[0], b)
+			a.send(queue[1], b)
+			a.send(queue[2], b)
+			b.send(queue[3], a)
+			b.send(queue[4], a)
+			b.send(queue[5], a)
+			a.send(queue[0], b)
+			a.send(queue[1], b)
+			a.send(queue[2], b)
+			console.log(`a.clock(): ${a.clock()}`)
+			console.log(`b.clock(): ${b.clock()}`)
+			print_events(events)
+			return true
+		})
+		
+		it('four', () => {
+			
+			if (true) return true
+			let a, b, queue = []
+			a = make_peer('a')
+			b = make_peer('b')
+			event = a.add({ value: 'a1' })
+			event = b.add({ value: 'b1' })
+			a.send(event, b)
+			b.send(event, a)
+			event = a.add({ value: 'a2' })
+			event = b.add({ value: 'b2' })
+			a.send(event, b)
+			b.send(event, a)
+			console.log(`a.clock(): ${a.clock()}`)
+			console.log(`b.clock(): ${b.clock()}`)
+			events.forEach(event => console.log(`event.id: ${event.id}`))
+			return true
+		})
+		
+	}).run()
+	
+	function make_peer(agent) {
+		
+		let clock = 0
+		const peer = {}
+		return Object.assign(peer, {
+			add: event => {
+				clock = clock + 1
+				event.id = [agent, clock]
+				console.log(`peer "${agent}" adds event     "${event.id}" at clock ${clock}`)
+				events.push(event)
+				return event
+			},
+			send: (event, peer) => {								// could be a batch of events
+				clock = clock + 1
+				console.log(`peer "${agent}" sends event    "${event.id}" at clock ${clock}`)
+				peer.receive(event, clock)
+			},
+			receive: (event, clock_) => {							// could be a batch of events
+				clock = Math.max(clock, clock_) + 1
+				console.log(`peer "${agent}" receives event "${event.id}" at clock ${clock}`)
+			},
+			clock: () => clock
+		})
+		
+		function tick(clock_ = clock) {
+			clock = clock_ + 1
+		}
+	}
+	
+	function print_events(events) {
+		events.forEach(event => console.log(`event.id: "${event.id}"`))
+	}
+	
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+<title>crdt primer</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	
+	make_test('crdt primer').suite(it => {
+		
+		it('is commutative add', () => {
+			
+			const add = (a, b) => a + b
+			return add(1, 2) === add(2, 1)
+		})
+		
+		it('is commutative multiply', () => {
+			
+			const times = (a, b) => a * b
+			return times(3, 7) === times(7, 3)
+		})
+		
+		it('is commutative string concatenate', () => {
+			
+			const concat = (a, b) => a + b
+			return concat('Hello', 'World') !== concat('World', 'Hello')
+		})
+		
+		it('is associative add', () => {
+			
+			const add = (a, b) => a + b
+			return add(add(2, 3), 4) === add(2, add(3, 4))
+		})
+		
+		it('is associative multiply', () => {
+			
+			const times = (a, b) => a * b
+			return times(times(2, 3), 4) === times(2, times(3, 4))
+		})
+		
+		it('is idempotent', () => {
+			
+			const set_value = (target, value) => Object.assign(target, { value })
+			let object = { value: null }
+			object = set_value(object, 1)
+			object = set_value(object, 1)
+			return object.value === 1
+		})
+		
+		it('is not idempotent', () => {
+			
+			const increment = target => Object.assign(target, { value: target.value + 1})
+			let object = { value: 0 }
+			object = increment(object)
+			object = increment(object)
+			return object.value !== 1
+		})
+		
+		it('is a Set object idempotent', () => {
+			
+			const set = new Set()
+			set.add('a')
+			const size = set.size
+			set.add('a')
+			return size === set.size
+		})
+		
+		it('is commutative + associative add', () => {
+			
+			const add = (a, b) => a + b
+			return add(2, add(3, 4)) === add(add(4, 3), 2)
+		})
+		
+		it('is commutative + associative multiply', () => {
+			
+			const times = (a, b) => a * b
+			return times(2, times(3, 4)) === times(times(4, 3), 2)
+		})
+		
+		it('is commutative + associative set union', () => {
+			
+			const a = new Set([1, 2]), b = new Set([2, 3]), c = new Set([3, 4])
+			const union = (a, b) => a.union(b)
+			return union(union(a, b), c).difference(union(a, union(b, c))).size === 0
+		})
+		
+		it('is commutative + associative + idempotent again', () => {
+			return false
+		})
+		
+	}).run()
+	
+</script>
+</body>
+</html>

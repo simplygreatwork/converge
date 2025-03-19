@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+<title>prepend : shows a way to represent and print a tree of text nodes</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	
+	const log = make_console('body')
+	const show = (label, object) => console.log(`\t${label}: ${JSON.stringify(object)}`)
+	
+	make_test('prepending').suite(it => {
+		
+		it('tests prepending nodes', () => {
+			
+			const root = make_node('')
+			const a = root.prepend('a')
+			const e = root.prepend('e')
+			const c = e.prepend('c')
+			c.prepend('b')
+			e.prepend('d')
+			a.prepend('_')
+			root.prepend('_')
+			console.log(`  value: ${root.to_string()}`)
+			return root.to_string() === '_abcde_'
+		})
+		
+	}).run()
+	
+	function make_node(value) {
+		
+		const children = []												// children should actually be ids
+		const node = {}
+		return Object.assign(node, { prepend, to_string })
+		
+		function prepend(value) {
+			return children.at(children.push(make_node(value)) - 1)
+		}
+		
+		function to_string() {
+			return [...children.map(child => child.to_string()), value].join('')
+		}
+	}
+	
+	function make_node_(value) {
+		
+		const children = []												// children should actually be ids
+		const node = {}
+		return Object.assign(node, { prepend, to_string })
+		
+		function prepend(value) {
+			
+			const node = make_node(value)
+			children.push(node)
+			return node
+		}
+		
+		function to_string() {
+			
+			let result = []
+			children.forEach(child => result.push(child.to_string()))
+			result.push(value)
+			return result.join('')
+		}
+	}
+	
+</script>
+</body>
+</html>
