@@ -126,17 +126,14 @@
 		const list_ = make_list_(agent)
 		if (network) network.add(list_)
 		const ids = ['root']
-		const list = {}
-		Object.assign(list, list_)
-		Object.assign(list, { insert, ids: index => ids.at(index) })
-		return list
+		const list = Object.assign({}, list_)
+		return Object.assign(list, { insert, ids: index => ids.at(index) })
 		
 		function insert(value, parent) {
 			
 			if (typeof parent == 'number') parent = ids.at(parent)
-			const id = list_.insert(value, parent)
-			ids.push(id)
-			return id
+			ids.push(list_.insert(value, parent))
+			return ids.at(-1)
 		}
 	}
 	
