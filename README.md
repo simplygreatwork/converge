@@ -23,8 +23,8 @@ I'm also attempting to illustrate other related concepts in [my GitHub project](
 - [Matt Wonlaw's "A Framework for Convergence"](https://vlcn.io/blog/crdt-substrate)
 - [Matt Wonlaw's "CRDT Substrate / DAG.ts"](https://github.com/vlcn-io/docs/blob/main/components/crdt-substrate/DAG.ts)
 - [Aaron Boodman's "You May Not Need a CRDT" @ Local First Web Meetup #4](https://www.youtube.com/watch?v=7Bb0KRLL8FI&t=1892s)
-- [Evan Wallace's CRDT tree-based indexing](https://madebyevan.com/algos/crdt-tree-based-indexing/)
-- [Seph Gentle's eg-walker](https://arxiv.org/abs/2409.14252)
+- [Evan Wallace's "CRDT: Tree-Based Indexing"](https://madebyevan.com/algos/crdt-tree-based-indexing/)
+- [Seph Gentle's "Collaborative Text Editing with Eg-walker: Better, Faster, Smaller"](https://arxiv.org/abs/2409.14252)
 
 # Nice read
 - https://www.farley.ai/posts/causal
