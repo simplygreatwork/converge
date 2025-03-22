@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
-<title>event graph tree list</title>
+<title>tree list with event graph</title>
 </head>
 <body>
 <script type="importmap">{"imports": {
@@ -37,14 +37,14 @@
 			a.insert('d', -3)					// insert d before the char inserted 3 ago e = a b c d e root
 			a.insert('(', 1)					// insert ( before a = ( a b c d e root
 			a.insert(')', 0)					// insert ) before root = ( a b c d e ) root
-			b.insert('1', 0)					// insert 1 after root of graph b = 1 root
-			b.insert('2', 0)					// insert 2 after root of graph b = 1 2 root
-			b.insert('3', 0)					// insert 3 after root of graph b = 1 2 3 root
+			b.insert('1', 0)					// insert 1 before root of graph b = 1 root
+			b.insert('2', 0)					// insert 2 before root of graph b = 1 2 root
+			b.insert('3', 0)					// insert 3 before root of graph b = 1 2 3 root
 			network.show()
 			network.reflect()
 			network.show()
-			console.log(`a.to_array(): ${JSON.stringify(a.to_array())}`)
-			console.log(`a.length(): ${JSON.stringify(a.to_array().length)}`)
+			console.log(`  a.to_array(): ${JSON.stringify(a.to_array())}`)
+			console.log(`  a.length(): ${JSON.stringify(a.to_array().length)}`)
 			return matches(a, b)
 		})
 		

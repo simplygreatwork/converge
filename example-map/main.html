@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+<title>map with event graph</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js",
+	"network": "./network.js",
+	"map": "./map.js",
+	"graph": "./graph.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	import { make_network as make_network_ } from 'network'
+	import { make_map as make_map_} from 'map'
+	
+	const log = make_console('body')
+	const show = (label, object) => console.log(`\t${label}: ${JSON.stringify(object)}`)
+	let network, a, b, c, d
+	
+	make_test('event graph tree list').suite(it => {
+		
+		it('syncs 2 lists', () => {
+			
+			network = make_network()
+			a = make_map('a', network)
+			b = make_map('b', network)
+			a.set('1', 1)
+			a.set('2', 1)
+			a.set('2', 2)
+			a.remove('2')
+			b.set('1', 1)
+			b.set('2', 1)
+			b.set('2', 2)
+			b.remove('2')
+			network.show()
+			return matches(a, b)
+		})
+		
+		it('syncs 2 lists', () => {
+			
+			network = make_network()
+			a = make_map('a', network)
+			b = make_map('b', network)
+			a.set('1', 1)
+			a.set('2', 1)
+			a.set('2', 2)
+			// a.remove('2')
+			network.reflect()
+			network.show()
+			return matches(a, b)
+		})
+		
+	}).run()
+	
+	function make_network() {
+		
+		const network = make_network_()
+		network.show = () => {
+			network.peers.forEach(map => {
+				show(`${map.name()} content`, map.to_string())
+			})
+		}
+		return network
+	}
+	
+	function make_map(agent, network) {
+		
+		const map = make_map_(agent, (key, { value, map, method, origin }) => {
+			if (origin === 'merge') return 
+			console.log(`  emit "${key}" on map "${map.name()}"`)
+		})
+		if (network) network.add(map)
+		return map
+	}
+	
+	function matches(a, b) {
+		return a.to_string() === b.to_string()
+	}
+	
+</script>
+</body>
+</html>
