@@ -2,7 +2,7 @@
 export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new Map(), changes = []) {
 	
 	const graph = {}
-	return Object.assign(graph, { init, add, diff, merge, order, flatten: order }).init()
+	return Object.assign(graph, { init, add, diff, merge, flatten }).init()
 	
 	function init() {
 		
@@ -73,7 +73,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		return make_graph(agent, clock_, nodes_, childrens_, diffs)
 	}
 	
-	function order(node = 'root') {
+	function flatten(node = 'root') {
 		
 		const get_children = node => childrens.get(node) || []
 		const events = new Set(), did_visit = new Set(), will_visit = [nodes.get('root')]
@@ -120,15 +120,8 @@ export function make_walker(graph, news = []) {
 	
 	function init() {
 		
-		if (false && news.length > 0) console.log(`news[0]: ${news[0]}`)
-		if (news.length > 0 && news[0]) {
-			try {
-				events = graph.order(news[0])						// can be defective
-			} catch (error) {
-				console.log(`  Error: ${error}`)
-				events = graph.order()
-			}
-		} else events = graph.order()
+		if (news.length > 0 && news[0]) events = graph.flatten(news[0])
+		else events = graph.flatten()
 		return walker
 	}
 	
