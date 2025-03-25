@@ -75,23 +75,29 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 	
 	function order(node = 'root') {
 		
-		const result = []
-		if (false) childrens = resolve_children()
-		const children = node => childrens.get(node) || []
-		const visited = new Set()
-		visit(node)
-		let i = 0
-		while (node = next(node)) {
-			visit(node)
-			i++
-			if (i === nodes.size - 1) break 
+		const get_children = node => childrens.get(node) || []
+		const events = new Set(), did_visit = new Set(), will_visit = [nodes.get('root')]
+		for (const node of will_visit) {
+			events.add(node)
+			if (did_visit.has(node)) continue
+			did_visit.add(node)
+			for (const child of get_children(node.id)) {
+				sequence(child)
+				will_visit.push(nodes.get(child))
+			}
 		}
-		return result
+		events.delete(nodes.get('root'))
+		return Array.from(events)
 		
-		function visit(node) {
+		function sequence(child) {
 			
-			if (! visited.has(node) && node !== 'root') result.push(nodes.get(node))
-			visited.add(node)			
+			events.add(nodes.get(child))
+			let children = get_children(child)
+			while (children.length === 1 && nodes.get(children[0]).parents.length === 1) {
+				child = nodes.get(children[0])
+				children = get_children(child.id)
+				events.add(child)
+			}			
 		}
 		
 		function resolve_children() {
@@ -101,68 +107,6 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 			nodes.values().forEach(node => node.parents.forEach(parent => map.get(parent).push(node.id)))
 			map.keys().forEach(key => map.get(key).sort(comparator))
 			return map
-		}
-		
-		function next(node) {
-			
-			if (is_empty_root(node)) return false
-			if (is_diverging(node)) return is_diverging(node)
-			if (is_sequential(node)) return is_sequential(node)
-			if (is_branch_end(node)) {
-				let branch = next_branch(node)
-				if (branch) return branch
-				else return converge(node)
-			}
-			
-			function is_empty_root(node) {
-				
-				if (node == 'root' && children(node).length === 0) return true
-				return false
-			}
-			
-			function is_diverging(node) {
-				
-				if (children(node).length <= 1) return false
-				return children(node)[0]
-			}
-			
-			function is_sequential(node) {
-				
-				if (children(node).length !== 1) return false
-				if (nodes.get(children(node)[0]).parents.length !== 1) return false
-				return children(node)[0]
-			}
-			
-			function is_branch_end(node) {
-				
-				if (children(node).length === 0) return true
-				if (is_converging(node)) return true
-				return false
-			}
-			
-			function is_converging(node) {
-				
-				if (children(node).length !== 1) return false
-				if (nodes.get(children(node)[0]).parents.length <= 1) return false
-				return true
-			}
-			
-			function converge(node) {
-				
-				return children(node)[0]
-			}
-			
-			function next_branch(node) {
-				
-				let last = node
-				while (! is_diverging(node)) {
-					last = node
-					node = nodes.get(node).parents[0]
-				}
-				const index = children(node).indexOf(last)
-				if (index + 1 < children(node).length) return children(node)[index + 1]
-				else return null
-			}
 		}
 	}
 }
