@@ -3,7 +3,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 	
 	const queue = {}
 	const graph = {}
-	return Object.assign(graph, { init, add, diff, merge, flatten }).init()
+	return Object.assign(graph, { init, add, diff, merge, rewind }).init()
 	
 	function init() {
 		
@@ -66,18 +66,18 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		return make_graph(agent, clock_, nodes_, childrens_, diffs, order)
 	}
 	
-	function flatten(fn) {
+	function rewind(fn) {
 		
-		const order = prepare_order()
-		let terminate = false
-		const terminate_fn = () => terminate = true
+		order = prepare_order()
+		let stopped = false
+		const stop = () => stopped = true
 		for (let clock = order.length - 1; clock >= 0; clock--) {
-			if (terminate) break
+			if (stopped) break
 			const ids = order[clock]
 			if (ids) ids.reverse().forEach(id => {
 				if (is_sequential(id)) enqueue(id)
-				else if (flush_queue(id, id => fn(id, terminate_fn))) ;
-				else fn(id, terminate_fn)
+				else if (flush_queue(id, id => fn(id, stop))) ;
+				else fn(id, stop)
 			})
 		}
 		
@@ -135,13 +135,13 @@ export function make_walker(graph, news = []) {
 		
 		let i = 0
 		let counter = 0
-		graph.flatten((id, terminate) => {
+		graph.rewind((id, stop) => {
 			const event = graph.nodes().get(id)
 			events.unshift(event)
 			const new_ = news.includes(event.id)
 			if (new_) counter++
 			if (! new_) fn(event, i++, new_)
-			if (counter === news.length) terminate()
+			if (counter === news.length) stop()
 		})
 	}
 	
