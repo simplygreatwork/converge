@@ -66,11 +66,9 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		return make_graph(agent, clock_, nodes_, childrens_, diffs, order)
 	}
 	
-	// need to defend against missing order indices
-	
 	function flatten(fn) {
 		
-		let result = []
+		const order = prepare_order()
 		let terminate = false
 		const terminate_fn = () => terminate = true
 		for (let clock = order.length - 1; clock >= 0; clock--) {
@@ -82,7 +80,18 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 				else fn(id, terminate_fn)
 			})
 		}
-		return result
+		
+ 		function prepare_order() {
+ 			
+ 			const order = []
+ 			nodes.keys().forEach(id => {
+ 				const [agent, clock] = id
+ 				if (! order[clock]) order[clock] = []
+ 				order[clock].push(id)
+ 				order[clock].sort(comparator)
+ 			})
+ 			return order
+ 		}
 		
 		function is_sequential(id) {
 			
