@@ -76,7 +76,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 	function flatten(node = 'root') {
 		
 		const get_children = node => childrens.get(node) || []
-		const events = new Set(), did_visit = new Set(), will_visit = [nodes.get('root')]
+		const events = new Set(), did_visit = new Set(), will_visit = [nodes.get(node)]
 		for (const node of will_visit) {
 			events.add(node)
 			if (did_visit.has(node)) continue
@@ -120,8 +120,7 @@ export function make_walker(graph, news = []) {
 	
 	function init() {
 		
-		if (news.length > 0 && news[0]) events = graph.flatten(news[0])
-		else events = graph.flatten()
+		events = graph.flatten()
 		return walker
 	}
 	
