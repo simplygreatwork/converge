@@ -24,12 +24,26 @@
 	let network, a, b, c, d
 	
 	make_test('event graph tree list').suite(it => {
+
+		it('basic', () => {
+			
+			network = make_network()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			a.insert('a', 'root')
+			b.insert('b', 'root')
+			network.show()
+			network.reflect()
+			network.show()
+			return matches(a, b)
+		})
 		
 		it('syncs 2 lists', () => {
 			
 			network = make_network()
 			a = make_list('a', network)
 			b = make_list('b', network)
+			c = make_list('c', network)
 			a.insert('a', 'root')			// insert a before root = a root
 			a.insert('e', 'root')			// insert e before root = a e root
 			a.insert('c', -1)					// insert c before the last char inserted e = a c e root
@@ -43,8 +57,20 @@
 			network.show()
 			network.reflect()
 			network.show()
+			a.insert('1', 'root')
+			a.insert('2', 'root')
+			b.insert('3', 'root')
+			b.insert('4', 'root')
+			c.insert('5', 'root')
+			c.insert('6', 'root')
+			a.merge(c)
+			network.show()
+			network.reflect()
+			network.show()
 			console.log(`  a.to_array(): ${JSON.stringify(a.to_array())}`)
 			console.log(`  a.length(): ${JSON.stringify(a.to_array().length)}`)
+			console.log(`  b.to_array(): ${JSON.stringify(b.to_array())}`)
+			console.log(`  b.length(): ${JSON.stringify(b.to_array().length)}`)
 			return matches(a, b)
 		})
 		

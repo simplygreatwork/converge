@@ -2,7 +2,7 @@
 export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new Map(), changes = []) {
 	
 	const graph = {}
-	return Object.assign(graph, { init, add, diff, merge, flatten }).init()
+	return Object.assign(graph, { init, add, diff, merge, rewind, flatten }).init()
 	
 	function init() {
 		
@@ -72,7 +72,19 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		diffs.forEach(key => nodes_.set(key, other.nodes().get(key)))
 		return make_graph(agent, clock_, nodes_, childrens_, diffs)
 	}
-	
+
+	function rewind(fn) {
+		
+		const events = flatten()
+		let index = 0
+		let stopped = false
+		const stop = () => stopped = true
+		for (let i = events.length - 1; i >= 0; i--) {
+			if (stopped) break
+			fn(events[i].id, index++, stop)
+		}		
+	}
+
 	function flatten(node = 'root') {
 		
 		const get_children = node => childrens.get(node) || []
@@ -113,35 +125,28 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 
 export function make_walker(graph, news = []) {
 	
-	let i
-	let events
+	const events = []
 	const walker = {}
-	return Object.assign(walker, { init, undo, redo }).init()
-	
-	function init() {
-		
-		events = graph.flatten()
-		return walker
-	}
+	return Object.assign(walker, { undo, redo })
 	
 	function undo(fn) {
 		
 		let counter = 0
-		for (i = events.length - 1; i >= 0; i--) {
-			const event = events[i]
+		graph.rewind((id, index, stop) => {
+			const event = graph.nodes().get(id)
+			events.unshift(event)
 			const new_ = news.includes(event.id)
 			if (new_) counter++
-			if (! new_) fn(event, i, new_)
-			if (counter === news.length) return i
-		}
+			if (! new_) fn(event, index, new_)
+			if (counter === news.length) stop()
+		})
 	}
 	
 	function redo(fn) {
 		
-		for (; i < events.length; i++) {
-			const event = events[i]
+		events.forEach((event, index) => {
 			const new_ = news.includes(event.id)
-			fn(event, i, new_)
-		}
+			fn(event, index, new_)
+		})
 	}
 }

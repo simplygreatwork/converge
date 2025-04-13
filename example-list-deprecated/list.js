@@ -43,9 +43,6 @@ export function make_list(name, emit = () => {}) {
 	
 	function apply(event, method, then) {
 		
-		// console.log(`apply: ${event}`)
-		// console.log(`apply: ${event.id}`)
-		// console.log(`apply: ${JSON.stringify(event.op)}`)
 		const type = event.op.type
 		const op = ops[[type, method]]
 		op(content, event)
