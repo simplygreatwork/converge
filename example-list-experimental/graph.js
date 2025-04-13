@@ -10,7 +10,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		nodes.set('root', { id: 'root', op: { type: null }, parents: [] })
 		graph.nodes = () => nodes
 		graph.clock = () => clock
-		update_order(changes)
+		update_order(changes, 'init')
 		return graph
 	}
 	
@@ -20,17 +20,18 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		const id = [agent, clock++]
 		const event = { id, op, parents: find_leaves() }
 		nodes.set(id, event)
-		update_order([event.id])
+		update_order([event.id], 'add')
 		return event
 	}
 	
-	function update_order(changes) {
+	function update_order(changes, source) {
 		
 		changes.forEach(id => {
 			const [agent, clock] = id
-			if (! order[clock]) order[clock] = []
-			order[clock].push(id)
-			order[clock].sort(comparator)
+			if (order[clock] === undefined) order[clock] = []
+			const ids = order[clock]
+			ids.push(id)
+			ids.sort(comparator)
 		})
 	}
 	
@@ -68,30 +69,18 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 	
 	function rewind(fn) {
 		
-		order = prepare_order()
 		let stopped = false
 		const stop = () => stopped = true
 		for (let clock = order.length - 1; clock >= 0; clock--) {
 			if (stopped) break
 			const ids = order[clock]
+			if (ids) ids.sort(comparator)						// issue: ought to be able to presort in update_order
 			if (ids) ids.reverse().forEach(id => {
 				if (is_sequential(id)) enqueue(id)
 				else if (flush_queue(id, id => fn(id, stop))) ;
 				else fn(id, stop)
 			})
 		}
-		
- 		function prepare_order() {
- 			
- 			const order = []
- 			nodes.keys().forEach(id => {
- 				const [agent, clock] = id
- 				if (! order[clock]) order[clock] = []
- 				order[clock].push(id)
- 				order[clock].sort(comparator)
- 			})
- 			return order
- 		}
 		
 		function is_sequential(id) {
 			

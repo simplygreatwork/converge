@@ -24,6 +24,19 @@
 	let network, a, b, c, d
 	
 	make_test('event graph tree list').suite(it => {
+
+		it('basic', () => {
+			
+			network = make_network()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			a.insert('a', 'root')
+			b.insert('b', 'root')
+			network.show()
+			network.reflect()
+			network.show()
+			return matches(a, b)
+		})
 		
 		it('syncs 2 lists', () => {
 			
