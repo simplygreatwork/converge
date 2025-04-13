@@ -72,19 +72,18 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		diffs.forEach(key => nodes_.set(key, other.nodes().get(key)))
 		return make_graph(agent, clock_, nodes_, childrens_, diffs)
 	}
-
+	
 	function rewind(fn) {
 		
 		const events = flatten()
-		let index = 0
 		let stopped = false
 		const stop = () => stopped = true
 		for (let i = events.length - 1; i >= 0; i--) {
 			if (stopped) break
-			fn(events[i].id, index++, stop)
+			fn(events[i].id, i, stop)
 		}		
 	}
-
+	
 	function flatten(node = 'root') {
 		
 		const get_children = node => childrens.get(node) || []

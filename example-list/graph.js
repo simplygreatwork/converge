@@ -1,6 +1,7 @@
 
-export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new Map(), changes = []) {
+export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new Map(), changes = [], order = []) {
 	
+	const queue = {}
 	const graph = {}
 	return Object.assign(graph, { init, add, diff, merge, rewind, flatten }).init()
 	
@@ -9,7 +10,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		nodes.set('root', { id: 'root', op: { type: null }, parents: [] })
 		graph.nodes = () => nodes
 		graph.clock = () => clock
-		update(childrens, changes)
+		update_order(changes, 'init')
 		return graph
 	}
 	
@@ -19,18 +20,18 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		const id = [agent, clock++]
 		const event = { id, op, parents: find_leaves() }
 		nodes.set(id, event)
-		update(childrens, [event.id])
+		update_order([event.id], 'add')
 		return event
 	}
 	
-	function update(childrens, changes) {
+	function update_order(changes, source) {
 		
 		changes.forEach(id => {
-			nodes.get(id).parents.forEach(parent => {
-				if (childrens.get(parent) === undefined) childrens.set(parent, [])
-				childrens.get(parent).push(id)
-				childrens.get(parent).sort(comparator)
-			})
+			const [agent, clock] = id
+			if (order[clock] === undefined) order[clock] = []
+			const ids = order[clock]
+			ids.push(id)
+			ids.sort(comparator)
 		})
 	}
 	
@@ -38,14 +39,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		
 		const leaves = new Set([...nodes.keys()])
 		nodes.values().forEach(node => node.parents.forEach(parent => leaves.delete(parent)))
-		return Array.from(leaves)
-	}
-	
-	function find_leaves_alternative() {
-		
-		const a = new Set([...nodes.keys()])
-		const b = new Set([...childrens.keys()])
-		return Array.from(a.difference(b))
+		return Array.from(leaves).sort(comparator)
 	}
 	
 	function diff(other) {
@@ -70,56 +64,64 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		const clock_ = Math.max(clock, other.clock()) + 1
 		const diffs = diff(other)
 		diffs.forEach(key => nodes_.set(key, other.nodes().get(key)))
-		return make_graph(agent, clock_, nodes_, childrens_, diffs)
+		return make_graph(agent, clock_, nodes_, childrens_, diffs, order)
 	}
-
+	
 	function rewind(fn) {
 		
-		const events = flatten()
 		let index = 0
 		let stopped = false
 		const stop = () => stopped = true
-		for (let i = events.length - 1; i >= 0; i--) {
+		for (let clock = order.length - 1; clock >= 0; clock--) {
 			if (stopped) break
-			fn(events[i].id, index++, stop)
-		}		
-	}
-
-	function flatten(node = 'root') {
+			const ids = order[clock]
+			if (ids) ids.sort(comparator)						// issue: ought to be able to presort in update_order
+			if (ids) ids.reverse().forEach(id => {
+				if (is_sequential(id)) enqueue(id)
+				else if (flush_queue(id, id => fn(id, index++, stop))) ;
+				else fn(id, index++, stop)
+			})
+		}
 		
-		const get_children = node => childrens.get(node) || []
-		const events = new Set(), did_visit = new Set(), will_visit = [nodes.get(node)]
-		for (const node of will_visit) {
-			events.add(node)
-			if (did_visit.has(node)) continue
-			did_visit.add(node)
-			for (const child of get_children(node.id)) {
-				sequence(child)
-				will_visit.push(nodes.get(child))
+		function is_sequential(id) {
+			
+			let result = false
+			const [agent, clock] = id
+			const ids = order[clock - 1]
+			if (ids) ids.forEach(id => {
+				if (id[0] === agent) result = true
+			})
+			return result
+		}
+		
+		function enqueue(id) {
+			
+			const agent = id[0]
+			if (! queue[agent]) queue[agent] = new Set()
+			queue[agent].add(id)
+		}
+		
+		function flush_queue(id, fn) {
+			
+			const agent = id[0]
+			if (queue[agent] && queue[agent].size > 0) {
+				queue[agent].forEach(fn)
+				fn(id)
+				queue[agent].clear()
+				return true
 			}
+			return false
 		}
-		events.delete(nodes.get('root'))
-		return Array.from(events)
+	}
+	
+	function flatten() {
 		
-		function sequence(child) {
-			
-			events.add(nodes.get(child))
-			let children = get_children(child)
-			while (children.length === 1 && nodes.get(children[0]).parents.length === 1) {
-				child = nodes.get(children[0])
-				children = get_children(child.id)
-				events.add(child)
-			}			
-		}
-		
-		function resolve_children() {
-			
-			const map = new Map()
-			nodes.keys().forEach(key => map.set(key, []))
-			nodes.values().forEach(node => node.parents.forEach(parent => map.get(parent).push(node.id)))
-			map.keys().forEach(key => map.get(key).sort(comparator))
-			return map
-		}
+		const events = []
+		graph.rewind((id, index, stop) => {
+			const event = graph.nodes().get(id)
+			events.unshift(event)
+		})
+		return events
 	}
 }
 
@@ -144,9 +146,9 @@ export function make_walker(graph, news = []) {
 	
 	function redo(fn) {
 		
-		events.forEach((event, index) => {
+		events.forEach((event, i) => {
 			const new_ = news.includes(event.id)
-			fn(event, index, new_)
+			fn(event, i, new_)
 		})
 	}
 }
