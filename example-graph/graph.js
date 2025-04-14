@@ -30,6 +30,7 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 			const [agent, clock] = id
 			if (order[clock] === undefined) order[clock] = []
 			const ids = order[clock]
+			if (ids === undefined) return
 			ids.push(id)
 			ids.sort(comparator)
 		})
@@ -75,10 +76,11 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 		for (let clock = order.length - 1; clock >= 0; clock--) {
 			if (stopped) break
 			const ids = order[clock]
+			if (ids === undefined) continue
 			if (ids) ids.sort(comparator)						// issue: ought to be able to presort in update_order
 			if (ids) ids.reverse().forEach(id => {
-				if (is_sequential(id)) enqueue(id)
-				else if (flush_queue(id, id => fn(id, index++, stop))) ;
+				if (is_sequential(id)) queue_sequence(id)
+				else if (flush_sequence(id, id => fn(id, index++, stop))) ;
 				else fn(id, index++, stop)
 			})
 		}
@@ -94,14 +96,14 @@ export function make_graph(agent, clock = 0, nodes = new Map(), childrens = new 
 			return result
 		}
 		
-		function enqueue(id) {
+		function queue_sequence(id) {
 			
 			const agent = id[0]
 			if (! queue[agent]) queue[agent] = new Set()
 			queue[agent].add(id)
 		}
 		
-		function flush_queue(id, fn) {
+		function flush_sequence(id, fn) {
 			
 			const agent = id[0]
 			if (queue[agent] && queue[agent].size > 0) {
