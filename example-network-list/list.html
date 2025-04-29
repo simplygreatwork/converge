@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>networked list</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js",
+	"bus": "./bus.js",
+	"agent": "./agent.js",
+	"order": "./order.js",
+	"list": "./list.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	import { make_agent } from 'agent'
+	import { make_list as make_list_} from 'list'
+	import { make_bus } from 'bus'
+	
+	const log = make_console('body')
+	let network, a, b, c
+	
+	make_test('networked list').suite((it, wait) => {
+		
+		wait('sync 2 lists', async (then) => {
+			
+			network = make_bus()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			a.insert('a', 'root')
+			b.insert('b', 'root')
+			show(a, b)
+			await delay(1000)
+			show(a, b)
+			then(matches(a, b))
+		})
+		
+		wait('sync 2 lists with no interleaving', async (then) => {
+			
+			network = make_bus()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			a.insert('a', 'root')
+			a.insert('b', 'root')
+			a.insert('c', 'root')
+			b.insert('1', 'root')
+			b.insert('2', 'root')
+			b.insert('3', 'root')
+			show(a, b)
+			await delay(100)
+			show(a, b)
+			then(matches(a, b))
+		})
+		
+		wait('sync 3 lists with no interleaving', async (then) => {
+			
+			network = make_bus()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			c = make_list('c', network)
+			a.insert('a', 'root')			// insert a before root = a root
+			a.insert('e', 'root')			// insert e before root = a e root
+			a.insert('c', -1)					// insert c before the last char inserted e = a c e root
+			a.insert('b', -1)					// insert b before the last char inserted c = a b c e root
+			a.insert('d', -3)					// insert d before the char inserted 3 ago e = a b c d e root
+			a.insert('(', 1)					// insert ( before a = ( a b c d e root
+			a.insert(')', 0)					// insert ) before root = ( a b c d e ) root
+			b.insert('1', 0)					// insert 1 before root of graph b = 1 root
+			b.insert('2', 0)					// insert 2 before root of graph b = 1 2 root
+			b.insert('3', 0)					// insert 3 before root of graph b = 1 2 3 root
+			show(a, b, c)
+			await delay(1000)
+			show(a, b, c)
+			b.insert('4', 'root')
+			c.insert('5', 'root')
+			c.insert('6', 'root')
+			await delay(1000)
+			show(a, b, c)
+			then(matches(a, b))
+		})
+		
+	}).run()
+	
+	function show() {
+		
+		Array.from(arguments).forEach(list => {
+			console.log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+		})
+	}
+	
+	async function delay(period) {
+		
+		return new Promise(resolve => {
+			setTimeout(() => resolve(), period)
+		})
+	}
+	
+	function make_list(name, network) {
+		
+		const agent = make_agent(name).connect(network)
+		const list_ = make_list_(agent)
+		const ids = ['root']
+		const list = Object.assign({}, list_)
+		return Object.assign(list, { insert, ids: index => ids.at(index) })
+		
+		function insert(value, parent) {
+			
+			if (typeof parent == 'number') parent = ids.at(parent)
+			ids.push(list_.insert(value, parent))
+			return ids.at(-1)
+		}
+	}
+	
+	function matches(a, b) {
+		return a.to_string() === b.to_string()
+	}
+	
+</script>
+</body>
+</html>
