@@ -4,7 +4,7 @@ import { make_order } from 'order'
 
 export function make_agent(name) {
 	
-	const verbose = true
+	const verbose = false
 	let agents = ['a', 'b', 'c', 'd']
 	let clock = 0
 	let network
@@ -69,16 +69,16 @@ export function make_agent(name) {
 	
 	function make_outbox() {
 		
+		let timeout
 		const high = []
 		const low = []
 		const outbox = {}
-		let timeout
-		return Object.assign(outbox, { init, push, flush, connected: false }).init()
+		return Object.assign(outbox, { init, push, flush }).init()
 		
 		function init() {
 			
 			local.on('connected', () => {
-				// request_updates()
+				request_updates()
 				run()
 			})
 			return outbox
@@ -127,12 +127,9 @@ export function make_agent(name) {
 			
 			local.on('connected', () => {
 				offs[0] = network.on('event', (event, clock_) => {
-					// console.log(`received event: ${JSON.stringify(event)}`)
 					const id = event.id
 					events.set(id, event)
 					order.add(id)
-					// console.log(`clock passed from network: ${clock_}`)
-					// order.js likely needs checking undefined slot values - use Map instead
 					clock = Math.max(clock, clock_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
@@ -144,8 +141,6 @@ export function make_agent(name) {
 						ids.push(id)
 						outbox.push('event', events.get(id), 'low')
 					})
-					
-					// below seems to be inaccurate:  can list wrong "to" agent
 					if (verbose && ids.length > 0) console.log(`    updated from "${name}" to "${to}": ${ids}`)
 				})
 			})
@@ -168,7 +163,6 @@ export function make_walker(agent, news = []) {
 	
 	function undo(fn) {
 		
-		// console.log(`walker undo`)
 		let counter = 0
 		agent.order().rewind((id, index, stop) => {
 			const event = agent.events().get(id)
@@ -182,7 +176,6 @@ export function make_walker(agent, news = []) {
 	
 	function redo(fn) {
 		
-		// console.log(`walker redo`)
 		events.forEach((event, i) => {
 			const new_ = news.includes(event.id)
 			fn(event, i, new_)

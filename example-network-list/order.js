@@ -39,7 +39,7 @@ export function make_order(events = () => {}) {
 	}
 	
 	function diff({ from, to, given }, fn) {
-
+		
 		if (verbose) console.log(`walk from "${from}" to "${to}" excluding ${exclude}`)
 		for (let clock = 0; clock < array.length; clock++) {
 			if (given.includes(clock)) continue
@@ -128,13 +128,5 @@ export function make_order(events = () => {}) {
 	
 	function to_string() {
 		return JSON.stringify(array.filter(each => each).filter(each => each.length > 0))
-	}
-	
-	function comparator(a, b) {
-		
-		const [agent_a, clock_a] = a
-		const [agent_b, clock_b] = b
-		if (clock_a === clock_b) return agent_a < agent_b ? -1 : 1
-		return clock_a - clock_b
 	}
 }
