@@ -21,10 +21,10 @@ I'm also attempting to illustrate other related concepts in [my GitHub project](
 
 # Update on the newest implementation
 - The newest implementation in in the directory example-network-list.
-- I switched from using a directed acyclic graph amd instead am using the Lamport clock timestamps as the basic for total ordering and reverse walk.
+- I switched from using a directed acyclic graph and instead am using the Lamport clock timestamps as the basic for total ordering and reverse walk.
 - That way everything is so much easier to optimize for performance.
 - Also, this custom ordering system does not permit interleaving at all unless you expressly allow it.
-- By default, every event of an agent is contigous and you expressly add breaks for gaps between groups of an agents events/edits.
+- By default, every event of an agent is contiguous and you expressly add breaks for gaps between groups of an agents events/edits.
 
 # Inspired by
 - [Matt Wonlaw's "A Framework for Convergence"](https://vlcn.io/blog/crdt-substrate)
