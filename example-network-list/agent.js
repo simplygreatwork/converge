@@ -10,7 +10,7 @@ export function make_agent(name) {
 	let network
 	const local = make_bus()
 	const events = new Map()
-	const order = make_order(id => events.get(id))
+	const order = make_order(events)
 	const outbox = make_outbox()
 	const inbox = make_inbox()
 	const agent = {}

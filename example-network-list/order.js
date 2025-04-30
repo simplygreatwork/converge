@@ -1,5 +1,5 @@
 
-export function make_order(events = () => {}) {
+export function make_order(events) {
 	
 	const verbose = false
 	const order = {}
@@ -74,7 +74,7 @@ export function make_order(events = () => {}) {
 			
 			let next_id = look_ahead(id)
 			if (! next_id) return false
-			const event = events(next_id)
+			const event = events.get(next_id)
 			if (event.grouped) return false
 			return true
 			
