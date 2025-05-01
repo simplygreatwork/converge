@@ -88,7 +88,7 @@ export function make_agent(name) {
 			
 			agents.forEach(agent => {
 				if (agent === name) return
-				push('request-update', { to: name, given: order.extract(agent) }, 'high')
+				push('events-request', { to: name, given: order.extract(agent) }, 'high')
 			})
 		}
 		
@@ -119,7 +119,7 @@ export function make_agent(name) {
 	
 	function make_inbox() {
 		
-		let offs = []
+		const offs = []
 		const inbox = {}
 		return Object.assign(inbox, { init, off }).init()
 		
@@ -133,7 +133,7 @@ export function make_agent(name) {
 					clock = Math.max(clock, clock_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
-				offs[1] = network.on('request-update', ({ to, given }) => {
+				offs[1] = network.on('events-request', ({ to, given }) => {
 					const from = name
 					if (to == from) return 
 					const ids = []

@@ -72,10 +72,10 @@ export function make_order(events) {
 		
 		function is_sequential(id) {
 			
+			const event = events.get(id)
+			if (event.grouped) return false
 			let next_id = look_ahead(id)
 			if (! next_id) return false
-			const event = events.get(next_id)
-			if (event.grouped) return false
 			return true
 			
 			function look_ahead(id) {
