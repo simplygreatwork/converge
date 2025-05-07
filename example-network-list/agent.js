@@ -5,7 +5,7 @@ import { make_order } from 'order'
 export function make_agent(name) {
 	
 	const verbose = false
-	let agents = ['a', 'b', 'c', 'd']
+	let agents = ['a', 'b', 'c', 'd']		// todo: have everyone announce themeselves
 	let clock = 0
 	let network
 	const local = make_bus()
@@ -78,6 +78,8 @@ export function make_agent(name) {
 		function init() {
 			
 			local.on('connected', () => {
+				console.log(`"${name}" has connected`)
+				push('connected', name, 'high')
 				request_updates()
 				run()
 			})
@@ -126,16 +128,19 @@ export function make_agent(name) {
 		function init() {
 			
 			local.on('connected', () => {
-				offs[0] = network.on('event', (event, clock_) => {
+				offs[0] = network.on('connected', name_ => {
+					console.log(`"${name}" observes "${name_}" has connected.`)
+				})
+				offs[1] = network.on('event', (event, clock_) => {
 					const id = event.id
 					events.set(id, event)
 					order.add(id)
 					clock = Math.max(clock, clock_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
-				offs[1] = network.on('events-request', ({ to, given }) => {
+				offs[2] = network.on('events-request', ({ to, given }) => {
 					const from = name
-					if (to == from) return 
+					if (to == from) return
 					const ids = []
 					order.diff({ from, to, given }, id => {
 						ids.push(id)
@@ -148,9 +153,7 @@ export function make_agent(name) {
 		}
 		
 		function off() {
-			
-			if (offs[0]) offs[0]()
-			if (offs[1]) offs[1]()
+			off.forEach(off => off())
 		}
 	}
 }
