@@ -82,6 +82,25 @@
 			then(matches(a, b))
 		})
 		
+		wait('sync 2 lists allowing grouping break points (block interleaving)', async (then) => {
+			
+			network = make_bus()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			a.insert('1', 'root', true)
+			a.insert('2', 'root')
+			a.insert('5', 'root', true)
+			a.insert('6', 'root')
+			b.insert('3', 'root', true)
+			b.insert('4', 'root')
+			b.insert('7', 'root', true)
+			b.insert('8', 'root')
+			show(a, b)
+			await delay(100)
+			show(a, b)
+			then(matches(a, b))
+		})
+		
 	}).run()
 	
 	function show() {
@@ -106,10 +125,10 @@
 		const list = Object.assign({}, list_)
 		return Object.assign(list, { insert, ids: index => ids.at(index) })
 		
-		function insert(value, parent) {
+		function insert(value, parent, grouped) {
 			
 			if (typeof parent == 'number') parent = ids.at(parent)
-			ids.push(list_.insert(value, parent))
+			ids.push(list_.insert(value, parent, grouped))
 			return ids.at(-1)
 		}
 	}

@@ -31,9 +31,9 @@ export function make_list(agent, emit = () => {}) {
 		ops[['remove', 'undo']] = (content, { op }) => delete content.get(op.remove).active
 	}
 	
-	function insert(value, parent) {
+	function insert(value, parent, grouped) {
 		
-		const event = agent.add({ type: 'insert', value, parent })
+		const event = agent.add({ type: 'insert', value, parent }, grouped)
 		return apply(event, 'redo', () => emit('insert', { value, parent, list }))
 	}
 	

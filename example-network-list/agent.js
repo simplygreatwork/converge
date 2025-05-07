@@ -78,7 +78,7 @@ export function make_agent(name) {
 		function init() {
 			
 			local.on('connected', () => {
-				console.log(`"${name}" has connected`)
+				console.log(`  "${name}" has connected`)
 				push('connected', name, 'high')
 				request_updates()
 				run()
@@ -129,7 +129,7 @@ export function make_agent(name) {
 			
 			local.on('connected', () => {
 				offs[0] = network.on('connected', name_ => {
-					console.log(`"${name}" observes "${name_}" has connected.`)
+					console.log(`  "${name}" observes "${name_}" has connected.`)
 				})
 				offs[1] = network.on('event', (event, clock_) => {
 					const id = event.id
@@ -153,7 +153,7 @@ export function make_agent(name) {
 		}
 		
 		function off() {
-			off.forEach(off => off())
+			offs.forEach(off => off())
 		}
 	}
 }
