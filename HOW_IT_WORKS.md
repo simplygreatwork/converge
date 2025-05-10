@@ -31,6 +31,6 @@
 - I need to make a few tweaks to the total ordering system.
 1. I need to revert the total ordering system to the previous implemention.
 - No 'begin-group' flags.
-- Emit agent ids based entirely on the contigiuous nature of ids - how it had orignally been done.
+- Emit agent ids as groups based entirely on the contiguous nature of those ids - how it had orignally been done.
 2. Create a text editing example. Apply any remotely updated clock value only after the user moves the cursor via mouse or keyboard.
 -  Having said all of this, the most recent implementation is the "networked" version in the folder example-networked-list.
