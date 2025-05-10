@@ -21,8 +21,8 @@
 - In these situations, the clock value is only applied locally after the user has moved the cursor via mouse or keyboard.
 - Agent "a" receives old events from another agent which has been offline for days.
 - In this situation, agent "a" needs to be able to rewind its event log and state to be able to replay the old event operation.
-- In order to do this successfully, each agent uses a total order system to be able to rewind reliabily without corruption.
-- When the total order system rewinds events, it always enforces that all contiguous event ids of each agent are emitted together as a group using queues - hopefully prohibiting interleaving.
+- To do this successfully, each agent uses a total ordering system to be able to rewind reliabily without corrupting state.
+- When the total ordering system rewinds events, it always enforces that all contiguous event ids of each agent are emitted together as a group using queues - hopefully prohibiting interleaving.
 - After a contiguous group of ids has been emitted from the agent's queue, it yields/cedes/defers to the next agent.
 
 # STATUS
