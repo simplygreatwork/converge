@@ -62,7 +62,7 @@ export function make_order(events) {
 			const ids = array[clock]
 			if (ids === undefined) continue
 			if (ids === null) continue
-			ids.sort(comparator)
+			ids.sort(comparator)						// issue: ought to be able to presort in update_order
 			ids.reverse().forEach(id => {
 				if (is_sequential(id)) queue_sequence(id)
 				else if (flush_sequence(id, id => fn(id, index++, stop))) ;
@@ -72,28 +72,13 @@ export function make_order(events) {
 		
 		function is_sequential(id) {
 			
-			const event = events.get(id)
-			if (event.grouped) return false
-			let next_id = look_ahead(id)
-			if (! next_id) return false
-			return true
-			
-			function look_ahead(id) {
-				
-				let result = null
-				const start = id[1] - 1
-				if (start >= array.length) return null
-				for (let clock = start; clock >= 0; clock--) {
-					const ids = array[clock]
-					if (ids === undefined) continue
-					if (ids === null) continue
-					ids.sort(comparator)
-					ids.reverse().forEach(id_ => {
-						if (id_[0] === id[0]) result = id_
-					})
-				}
-				return result
-			}
+			let result = false
+			const [agent, clock] = id
+			const ids = array[clock - 1]
+			if (ids) ids.forEach(id => {
+				if (id[0] === agent) result = true
+			})
+			return result
 		}
 		
 		function queue_sequence(id) {

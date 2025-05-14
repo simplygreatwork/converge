@@ -4,13 +4,19 @@
 <title>networked list</title>
 </head>
 <body>
+<div class="display" style="height:50vh">
+<div id="a">a : <span></span></div>
+<div id="b">b : <span></span></div>
+<div id="c">c : <span></span></div>
+</div>
+<div class="console"></div>
 <script type="importmap">{"imports": {
 	"test": "../shared/develop.js",
 	"console": "../shared/develop.js",
-	"bus": "./bus.js",
-	"agent": "./agent.js",
-	"order": "./order.js",
-	"list": "./list.js"
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"list": "../system/list.js"
 }}</script>
 <script type="module">
 	
@@ -20,13 +26,18 @@
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
 	
-	const log = make_console('body')
+	const $ = selector => document.querySelector(selector)
+	const reset = () => bus.emit('reset')
+	const log = make_console('.console')
 	let network, a, b, c
+	let bus = make_bus()
+	make_ui(bus)
 	
 	make_test('networked list').suite((it, wait) => {
 		
 		wait('sync 2 lists', async (then) => {
 			
+			reset()
 			network = make_bus()
 			a = make_list('a', network)
 			b = make_list('b', network)
@@ -40,6 +51,7 @@
 		
 		wait('sync 2 lists with no interleaving', async (then) => {
 			
+			reset()
 			network = make_bus()
 			a = make_list('a', network)
 			b = make_list('b', network)
@@ -57,6 +69,7 @@
 		
 		wait('sync 3 lists with no interleaving', async (then) => {
 			
+			reset()
 			network = make_bus()
 			a = make_list('a', network)
 			b = make_list('b', network)
@@ -84,16 +97,20 @@
 		
 		wait('sync 2 lists allowing grouping break points (block interleaving)', async (then) => {
 			
+			reset()
 			network = make_bus()
-			a = make_list('a', network)
-			b = make_list('b', network)
-			a.insert('1', 'root', true)
+			const interleave = false
+			a = make_list('a', network, interleave)
+			b = make_list('b', network, interleave)
+			a.insert('1', 'root')
 			a.insert('2', 'root')
-			a.insert('5', 'root', true)
+			a.promote()
+			a.insert('5', 'root')
 			a.insert('6', 'root')
-			b.insert('3', 'root', true)
+			b.insert('3', 'root')
 			b.insert('4', 'root')
-			b.insert('7', 'root', true)
+			b.promote()
+			b.insert('7', 'root')
 			b.insert('8', 'root')
 			show(a, b)
 			await delay(100)
@@ -102,6 +119,21 @@
 		})
 		
 	}).run()
+
+	function make_ui(bus) {
+		
+		bus.on(`reset`, change => {
+			$(`#a span`).innerText = ``
+			$(`#b span`).innerText = ``
+			$(`#c span`).innerText = ``
+		})
+		bus.on(`change`, change => {
+			$(`#${change.list.name()} span`).innerText = change.list.to_string()
+		})
+		bus.on(`change`, change => {
+			if (false) console.log(`  change to list "${change.list.name()}": ${change.type}`)
+		})
+	}
 	
 	function show() {
 		
@@ -117,10 +149,10 @@
 		})
 	}
 	
-	function make_list(name, network) {
+	function make_list(name, network, interleave = true) {
 		
-		const agent = make_agent(name).connect(network)
-		const list_ = make_list_(agent)
+		const agent = make_agent(name, interleave).connect(network)
+		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
 		const ids = ['root']
 		const list = Object.assign({}, list_)
 		return Object.assign(list, { insert, ids: index => ids.at(index) })

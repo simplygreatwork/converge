@@ -1,23 +1,27 @@
 
-import { make_graph } from 'graph'
-import { make_walker } from 'graph'
+import { make_agent } from 'agent'
+import { make_walker } from 'agent'
 
-export function make_list(name, emit = () => {}) {
+export function make_list(agent, emit = () => {}) {
 	
-	let graph
 	let content
 	const ops = {}
 	const list = {}
-	return Object.assign(list, { init, insert, remove, merge, to_string, length, to_array }).init()
+	return Object.assign(list, { init, insert, remove, to_string, length, to_array, node_at, char_at }).init()
 	
 	function init() {
 		
-		list.name = () => name
-		list.graph = () => graph
-		graph = make_graph(name)
 		content = new Map()
 		content.set('root', make_node('root'))
 		define_ops()
+		agent.on('merge', diffs => {
+			const walker = make_walker(agent, diffs)
+			walker.undo(event => apply(event, 'undo', () => {}))
+			walker.redo(event => apply(event, 'redo', () => {}))
+			emit('change', { type: 'merge', diffs, list })
+		})
+		list.name = () => agent.name()
+		list.promote = () => agent.promote()
 		return list
 	}
 	
@@ -29,16 +33,16 @@ export function make_list(name, emit = () => {}) {
 		ops[['remove', 'undo']] = (content, { op }) => delete content.get(op.remove).active
 	}
 	
-	function insert(value, parent) {
+	function insert(value, parent, grouped) {
 		
-		const event = graph.add({ type: 'insert', value, parent })
-		return apply(event, 'redo', () => emit('insert', { value, parent, list }))
+		const event = agent.add({ type: 'insert', value, parent }, grouped)
+		return apply(event, 'redo', () => emit('change', { type: 'insert', value, parent, list }))
 	}
 	
 	function remove(id) {
 		
-		const event = graph.add({ type: 'remove', remove: id })
-		return apply(event, 'redo', () => emit('remove', { remove: id, list }))
+		const event = agent.add({ type: 'remove', remove: id })
+		return apply(event, 'redo', () => emit('change', { type: 'remove', remove: id, list }))
 	}
 	
 	function apply(event, method, then) {
@@ -48,15 +52,6 @@ export function make_list(name, emit = () => {}) {
 		op(content, event)
 		if (then) then()
 		return event.id
-	}
-	
-	function merge(other) {
-		
-		const diffs = graph.diff(other.graph())
-		graph = graph.merge(other.graph())
-		const walker = make_walker(graph, diffs)
-		walker.undo(event => apply(event, 'undo', () => {}))
-		walker.redo(event => apply(event, 'redo', () => {}))
 	}
 	
 	function visit(node, fn, level = 0, parent = null) {
@@ -69,10 +64,12 @@ export function make_list(name, emit = () => {}) {
 	
 	function iterate(fn) {
 		
+		let index = 0
 		visit('root', (child, parent, level) => {
 			if (level === 0) return
-			if (content.get(child).active === false) return 
-			fn(content.get(child).value)
+			if (content.get(child).active === false) return
+			index++
+			fn(content.get(child), index)
 		})
 	}
 	
@@ -87,8 +84,21 @@ export function make_list(name, emit = () => {}) {
 	function to_array() {
 		
 		const array = []
-		iterate(value => array.push(value))
+		iterate(node => array.push(node.value))
 		return array
+	}
+	
+	function node_at(index) {
+		
+		let result = null
+		iterate((node, index_) => {
+			if (index_ - 1 === index) result = node
+		})
+		return result
+	}
+	
+	function char_at(index) {
+		return node_at(index).value
 	}
 	
 	function make_node(id, value = '') {

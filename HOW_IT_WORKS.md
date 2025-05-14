@@ -8,8 +8,8 @@
 - Interleaving is an issue which may occur in collaborative text editing systems.
 - An example of interleaving is when two users type a word at the same time and the letters become interspersed when they merge.
 - Interleaving is historically difficult to solve completely in a distributed collaborative system.
-- My primary goal in this project is to create a tiny, straighforward system for conflict-free data exchange.
-- I also hope to be able to eliminate the issue of interleaving. I, perhaps naively, believe that I am very close to a straighforward solution to prevent text interleaving.
+- My primary goal in this project is to create a tiny, straightforward system for conflict-free data exchange.
+- I also hope to be able to eliminate the issue of interleaving. I, perhaps naively, believe that I am very close to a straightforward solution to prevent text interleaving.
 - Read on below. No guarantees.
 
 # HOW IT WORKS

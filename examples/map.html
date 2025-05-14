@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>networked map</title>
+</head>
+<body>
+<div class="display" style="height:50vh">
+<div id="a">a : <span></span></div>
+<div id="b">b : <span></span></div>
+</div>
+<div class="console"></div>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js",
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"map": "../system/map.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	import { make_agent } from 'agent'
+	import { make_map as make_map_} from 'map'
+	import { make_bus } from 'bus'
+	
+	const $ = selector => document.querySelector(selector)
+	const reset = () => bus.emit('reset')
+	const log = make_console('.console')
+	let network, a, b, c
+	let bus = make_bus()
+	make_ui(bus)
+	
+	make_test('networked list').suite((it, wait) => {
+		
+		wait('sync 2 maps', async (then) => {
+			
+			reset()
+			network = make_bus()
+			a = make_map('a', network)
+			b = make_map('b', network)
+			a.set('1', 1)
+			a.set('2', 1)
+			a.set('2', 2)
+			a.remove('2')
+			b.set('1', 1)
+			b.set('2', 1)
+			b.set('2', 2)
+			b.remove('2')
+			show(a, b)
+			await delay(1000)
+			show(a, b)
+			then(matches(a, b))
+		})
+		
+		wait('sync 2 maps again', async (then) => {
+			
+			reset()
+			network = make_bus()
+			a = make_map('a', network)
+			b = make_map('b', network)
+			a.set('1', 1)
+			a.set('2', 1)
+			a.set('2', 2)
+			show(a, b)
+			await delay(100)
+			show(a, b)
+			then(matches(a, b))
+		})
+		
+	}).run()
+	
+	function make_ui(bus) {
+		return
+	}
+	
+	function show() {
+		
+		Array.from(arguments).forEach(map => {
+			console.log(`  map "${map.name()}": ${JSON.stringify(map.to_string())}`)
+		})
+	}
+	
+	async function delay(period) {
+		
+		return new Promise(resolve => {
+			setTimeout(() => resolve(), period)
+		})
+	}
+	
+	function make_map(name, network, interleave = true) {
+		
+		const agent = make_agent(name, interleave).connect(network)
+		const map = make_map_(agent)
+		return map
+	}
+	
+	function matches(a, b) {
+		return a.to_string() === b.to_string()
+	}
+	
+</script>
+</body>
+</html>

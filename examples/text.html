@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>networked text</title>
+</head>
+<body>
+<div class="display" style="height:50vh">
+<div id="a">a : <input type="text"/><input type="checkbox" checked/></div>
+<div id="b">b : <input type="text"/><input type="checkbox" checked/></div>
+<div id="c">c : <input type="text"/><input type="checkbox" checked/></div>
+</div>
+<div class="console"></div>
+<script type="importmap">{"imports": {
+	"test": "../shared/develop.js",
+	"console": "../shared/develop.js",
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"list": "../system/list.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'test'
+	import { make_console } from 'console'
+	import { make_agent } from 'agent'
+	import { make_list as make_list_} from 'list'
+	import { make_bus } from 'bus'
+	
+	const $ = selector => document.querySelector(selector)
+	const reset = () => bus.emit('reset')
+	const log = make_console('.console')
+	let network, a, b, c
+	let bus = make_bus()
+	make_ui(bus)
+	
+	make_test('networked text').suite((it, wait) => {
+		
+		wait('sync 3 text fields with no interleaving', async (then) => {
+			
+			reset()
+			network = make_bus()
+			const interleave = false							// fixme: this should actually be false, not true flor this example
+			a = make_list('a', network, interleave)
+			b = make_list('b', network, interleave)
+			c = make_list('c', network, interleave)
+			a.insert('o', 'root')
+			a.insert('n', 'root')	// todo: let root be the default
+			a.insert('e', 'root')
+			a.promote()
+			b.insert('t', 'root')
+			b.insert('w', 'root')
+			b.insert('o', 'root')
+			b.promote()
+			a.insert('f', 'root')
+			a.insert('o', 'root')
+			a.insert('u', 'root')
+			a.insert('r', 'root')
+			a.promote()
+			b.insert('f', 'root')
+			b.insert('i', 'root')
+			b.insert('v', 'root')
+			b.insert('e', 'root')
+			b.promote()
+			c.insert('t', 'root')
+			c.insert('h', 'root')
+			c.insert('r', 'root')
+			c.insert('e', 'root')
+			c.insert('e', 'root')
+			c.promote()
+			c.insert('s', 'root')
+			c.insert('i', 'root')
+			c.insert('x', 'root')
+			c.promote()
+			show(a, b, c)
+			await delay(100)
+			show(a, b, c)
+			await delay(1000)
+			then(matches(a, b))
+		})
+		
+	}).run()
+	
+	export function make_ui(bus) {
+		
+		bus.on(`reset`, change => {
+			$(`#a input`).value = ``
+			$(`#b input`).value = ``
+			$(`#c input`).value = ``
+		})
+		bus.on(`change`, change => {
+			$(`#${change.list.name()} input`).value = change.list.to_string()
+		})
+		bus.on(`change`, change => {
+			if (false) console.log(`  change to list "${change.list.name()}": ${change.type}`)
+		})
+		
+		$(`#a input`).onkeydown = event => handle(event)
+		$(`#b input`).onkeydown = event => handle(event)
+		$(`#c input`).onkeydown = event => handle(event)
+		
+		$(`#a input`).addEventListener('selectionchange', () => console.log(`a selectionchange`))
+		$(`#b input`).addEventListener('selectionchange', () => console.log(`b selectionchange`))
+		$(`#c input`).addEventListener('selectionchange', () => console.log(`c selectionchange`))
+		
+		function handle(event) {
+			
+			const element = event.target
+			const index = element.selectionStart
+			const id = a.node_at(index).id
+			if (event.key.length !== 1) return
+			const char = event.key
+			a.insert(char, id)
+			event.stopPropagation()
+			event.preventDefault()
+		}
+	}
+	
+	function show() {
+		
+		Array.from(arguments).forEach(list => {
+			console.log(`  text "${list.name()}": ${JSON.stringify(list.to_array())}`)
+		})
+	}
+	
+	async function delay(period) {
+		
+		return new Promise(resolve => {
+			setTimeout(() => resolve(), period)
+		})
+	}
+	
+	function make_list(name, network, interleave = true) {
+		
+		const agent = make_agent(name, interleave).connect(network)
+		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
+		const ids = ['root']
+		const list = Object.assign({}, list_)
+		return Object.assign(list, { insert, ids: index => ids.at(index) })
+		
+		function insert(value, parent, grouped) {
+			
+			if (typeof parent == 'number') parent = ids.at(parent)
+			ids.push(list_.insert(value, parent, grouped))
+			return ids.at(-1)
+		}
+	}
+	
+	function matches(a, b) {
+		return a.to_string() === b.to_string()
+	}
+	
+</script>
+</body>
+</html>

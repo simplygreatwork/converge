@@ -2,11 +2,13 @@
 import { make_bus } from 'bus'
 import { make_order } from 'order'
 
-export function make_agent(name) {
+export function make_agent(name, interleave = true) {
 	
 	const verbose = false
-	let agents = ['a', 'b', 'c', 'd']		// todo: have everyone announce themeselves
+	let agents = ['a', 'b', 'c', 'd']		// todo: have all agents announce/introduce themselves
 	let clock = 0
+	let clock_system = null
+	let upgrade_clock = false
 	let network
 	const local = make_bus()
 	const events = new Map()
@@ -14,7 +16,7 @@ export function make_agent(name) {
 	const outbox = make_outbox()
 	const inbox = make_inbox()
 	const agent = {}
-	return Object.assign(agent, { init, on, add, list, to_string, connect, disconnect }).init()
+	return Object.assign(agent, { init, on, add, promote, list, to_string, connect, disconnect }).init()
 	
 	function init() {
 		
@@ -39,6 +41,15 @@ export function make_agent(name) {
 		outbox.push('event', event, 'high')
 		order.add(id)
 		return event
+	}
+	
+	function promote() {
+		
+		if (interleave) return
+		if (clock_system === null) clock_system = clock 		
+		// if (clock_system !== null) return
+		clock = Math.max(clock, clock_system) + 1
+		clock_system = null
 	}
 	
 	function list() {
@@ -131,11 +142,12 @@ export function make_agent(name) {
 				offs[0] = network.on('connected', name_ => {
 					console.log(`  "${name}" observes "${name_}" has connected.`)
 				})
-				offs[1] = network.on('event', (event, clock_) => {
+				offs[1] = network.on('event', (event, clock_system_) => {
 					const id = event.id
 					events.set(id, event)
 					order.add(id)
-					clock = Math.max(clock, clock_) + 1
+					if (interleave === false) clock_system = clock_system_
+					else clock = Math.max(clock, clock_system_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
 				offs[2] = network.on('events-request', ({ to, given }) => {

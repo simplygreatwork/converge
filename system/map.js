@@ -1,10 +1,9 @@
 
-import { make_graph } from 'graph'
-import { make_walker } from 'graph'
+import { make_agent } from 'agent'
+import { make_walker } from 'agent'
 
-export function make_map(name, emit = () => {}) {
+export function make_map(agent, emit = () => {}) {
 	
-	let graph
 	let content
 	const ops = {}
 	const map = {}
@@ -12,11 +11,16 @@ export function make_map(name, emit = () => {}) {
 	
 	function init() {
 		
-		map.name = () => name
-		map.graph = () => graph
-		graph = make_graph(name)
 		content = make_stack_map()
 		define_ops()
+		agent.on('merge', diffs => {
+			const walker = make_walker(agent, diffs)
+			walker.undo(event => apply(event, 'undo', () => {}))
+			walker.redo(event => apply(event, 'redo', () => {}))
+			emit('change', { type: 'merge', diffs, map })
+		})
+		map.name = () => agent.name()
+		map.promote = () => agent.promote()
 		return map
 	}
 	
@@ -30,13 +34,13 @@ export function make_map(name, emit = () => {}) {
 	
 	function set(key, value) {
 		
-		const event = graph.add({ type: 'set', key, value })
+		const event = agent.add({ type: 'set', key, value })
 		return apply(event, 'redo', () => emit('set', { value, map }))
 	}
 	
 	function remove(key) {
 		
-		const event = graph.add({ type: 'remove', remove: key })
+		const event = agent.add({ type: 'remove', remove: key })
 		return apply(event, 'redo', () => emit('remove', { key, map }))
 	}
 	
