@@ -20,11 +20,9 @@ I'm also attempting to illustrate other related concepts in [my GitHub project](
 - tree-list-with-event-graph: a tree-based list which uses an event graph to merge operation events among peers
 
 # Update on the newest implementation
-- The newest implementation in in the directory example-network-list.
+- The newest implementation is in the directory 'system'.
 - I switched from using a directed acyclic graph and instead am using the Lamport clock timestamps as the basic for total ordering and reverse walk.
 - That way everything is so much easier to optimize for performance.
-- Also, this custom ordering system does not permit interleaving at all unless you expressly allow it.
-- By default, every event of an agent is contiguous and you expressly add breaks for gaps between groups of an agents events/edits.
 
 # Inspired by
 - [Matt Wonlaw's "A Framework for Convergence"](https://vlcn.io/blog/crdt-substrate)
