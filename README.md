@@ -9,7 +9,7 @@
 - "learn-crdt-primer" shows the core concepts of conflict-free data replication.
 - "learn-clocks" attempts to illustrate how clocks synchronize within a concurrent, distributed system.
 - "learn-prepend-text" shows one way to represent and print a tree of text nodes
-- The "system" directory contains the primary implementations of the core conponents: agent, order, list, map, bus.
+- The "system" directory contains the primary implementations of the core components: agent, order, list, map, bus.
 - The "examples" directory contains the primary examples of list, text, and map.
 
 # Usage
