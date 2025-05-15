@@ -39,12 +39,12 @@
 			
 			reset()
 			network = make_bus()
-			const interleave = false							// fixme: this should actually be false, not true flor this example
+			const interleave = false
 			a = make_list('a', network, interleave)
 			b = make_list('b', network, interleave)
 			c = make_list('c', network, interleave)
 			a.insert('o', 'root')
-			a.insert('n', 'root')	// todo: let root be the default
+			a.insert('n', 'root')
 			a.insert('e', 'root')
 			a.promote()
 			b.insert('t', 'root')
@@ -94,24 +94,39 @@
 			if (false) console.log(`  change to list "${change.list.name()}": ${change.type}`)
 		})
 		
-		$(`#a input`).onkeydown = event => handle(event)
-		$(`#b input`).onkeydown = event => handle(event)
-		$(`#c input`).onkeydown = event => handle(event)
+		watch_keydown($(`#a input`))
+		watch_keydown($(`#b input`))
+		watch_keydown($(`#c input`))
 		
-		$(`#a input`).addEventListener('selectionchange', () => console.log(`a selectionchange`))
-		$(`#b input`).addEventListener('selectionchange', () => console.log(`b selectionchange`))
-		$(`#c input`).addEventListener('selectionchange', () => console.log(`c selectionchange`))
-		
-		function handle(event) {
+		function watch_keydown(element) {
 			
-			const element = event.target
-			const index = element.selectionStart
-			const id = a.node_at(index).id
-			if (event.key.length !== 1) return
-			const char = event.key
-			a.insert(char, id)
-			event.stopPropagation()
-			event.preventDefault()
+			element.addEventListener('keydown', event => {
+				if (event.key.length !== 1) return
+				const index = event.target.selectionStart
+				const id = a.node_at(index).id
+				a.insert(event.key, id)
+				event.stopPropagation()
+				event.preventDefault()
+			})
+		}
+		
+		watch_promote($(`#a input`), a)
+		watch_promote($(`#b input`), b)
+		watch_promote($(`#c input`), c)
+		
+		function watch_promote(element, list) {
+			
+			let keydown = false, input = false
+			element.addEventListener('keydown', event => keydown = true)
+			element.addEventListener('input', event => input = true)
+			element.addEventListener('focus', () => {})
+			element.addEventListener('mousedown', event => {
+				list.agent().promote()
+			})
+			element.addEventListener('selectionchange', () => {
+				if (keydown && ! input) list.agent().promote() 
+				keydown = input = false
+			})
 		}
 	}
 	
