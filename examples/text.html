@@ -11,8 +11,8 @@
 </div>
 <div class="console"></div>
 <script type="importmap">{"imports": {
-	"test": "../shared/develop.js",
-	"console": "../shared/develop.js",
+	"test": "../system/develop.js",
+	"console": "../system/develop.js",
 	"bus": "../system/bus.js",
 	"agent": "../system/agent.js",
 	"order": "../system/order.js",
@@ -72,9 +72,9 @@
 			c.insert('x', 'root')
 			c.promote()
 			show(a, b, c)
-			await delay(100)
+			await delay(2000)
 			show(a, b, c)
-			await delay(1000)
+			await delay(2000)
 			then(matches(a, b))
 		})
 		
@@ -110,21 +110,29 @@
 			})
 		}
 		
-		watch_promote($(`#a input`), a)
-		watch_promote($(`#b input`), b)
-		watch_promote($(`#c input`), c)
+		watch_promote($(`#a input`), () => a)
+		watch_promote($(`#b input`), () => b)
+		watch_promote($(`#c input`), () => c)
+		
+		// fixme: do not promote with regular key input
+		// reconsider that promote only occurs on next input like undo manager works
+		// maybe will be ok to apply on next input?
 		
 		function watch_promote(element, list) {
 			
+			const promote = false
 			let keydown = false, input = false
 			element.addEventListener('keydown', event => keydown = true)
 			element.addEventListener('input', event => input = true)
 			element.addEventListener('focus', () => {})
 			element.addEventListener('mousedown', event => {
-				list.agent().promote()
+				console.log(`promoting from mousedown`)
+				if (promote) list().promote()
 			})
 			element.addEventListener('selectionchange', () => {
-				if (keydown && ! input) list.agent().promote() 
+				if (! (keydown && ! input)) return
+				console.log(`promoting from selectionchange after keydown with no input`)
+				if (promote) list().promote()
 				keydown = input = false
 			})
 		}

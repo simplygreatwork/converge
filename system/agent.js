@@ -5,7 +5,7 @@ import { make_order } from 'order'
 export function make_agent(name, interleave = true) {
 	
 	const verbose = false
-	let agents = ['a', 'b', 'c', 'd']		// todo: have all agents announce/introduce themselves
+	let agents = ['a', 'b', 'c', 'd']				// fixme: have all agents announce/introduce themselves
 	let clock = 0
 	let clock_system = null
 	let upgrade_clock = false
@@ -16,7 +16,7 @@ export function make_agent(name, interleave = true) {
 	const outbox = make_outbox()
 	const inbox = make_inbox()
 	const agent = {}
-	return Object.assign(agent, { init, on, add, promote, list, to_string, connect, disconnect }).init()
+	return Object.assign(agent, { init, add, promote, connect, disconnect, list, to_string, on }).init()
 	
 	function init() {
 		
@@ -25,10 +25,6 @@ export function make_agent(name, interleave = true) {
 		agent.events = () => events
 		agent.order = () => order
 		return agent
-	}
-	
-	function on() {
-		local.on(...arguments)
 	}
 	
 	function add(op, grouped) {
@@ -52,14 +48,6 @@ export function make_agent(name, interleave = true) {
 		clock_system = null
 	}
 	
-	function list() {
-		console.log(`  ${to_string()}`)
-	}
-	
-	function to_string() {
-		return `agent "${name}": ${order.to_string()}`
-	}
-	
 	function connect(bus) {
 		
 		network = bus
@@ -76,6 +64,18 @@ export function make_agent(name, interleave = true) {
 			inbox.off()
 			setTimeout(() => resolve(), 100)
 		})
+	}
+
+	function list() {
+		console.log(`  ${to_string()}`)
+	}
+	
+	function to_string() {
+		return `agent "${name}": ${order.to_string()}`
+	}
+	
+	function on() {
+		local.on(...arguments)
 	}
 	
 	function make_outbox() {
