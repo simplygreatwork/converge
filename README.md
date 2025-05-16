@@ -20,7 +20,7 @@
 - An exception is that the total ordering system is already very efficient for insertion event ids and presorts agents for rewind.
 - An exception is that each agent keeps records of known current event data so it won't need to request that subset again.
 - The example "text.html" is still in development. The interleaving prevention is being refined and hardened within the selection listener.
-- 
+  
 # Highlights
 - When an agent reconnects after a period offline, it's able to ask the other agents for missing data.
 - With the property "interleave" set to false, concurrent textual edits among peers will never interleave.
