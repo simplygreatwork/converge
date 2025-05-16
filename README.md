@@ -17,7 +17,7 @@
 
 # Status
 - In development, alpha, reference implementation. Initially aiming for concise clarity and not necessarily optimized for memory or performance.
-- An exception is that the total ordering system is already very efficient for insertion event ids and presorts agents for rewind.
+- An exception is that the total ordering system is already very efficient for insertion of event ids and presorts agents for efficient rewind.
 - An exception is that each agent keeps records of known current event data so it won't need to request that subset again.
 - The example "text.html" is still in development. The interleaving prevention is being refined and hardened within the selection listener.
   
