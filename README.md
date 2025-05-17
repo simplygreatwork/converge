@@ -9,7 +9,7 @@
 - "learn-crdt-primer.html" shows the core concepts of conflict-free data replication.
 - "learn-lamport-clocks.html" attempts to illustrate how clocks synchronize within a concurrent, distributed system.
 - "learn-prepend-text.html" shows one way to represent and print a tree of text nodes
-- The "system" directory contains the primary implementations of the core conponents: agent, order, list, map, bus.
+- The "system" directory contains the primary implementations of the core components: agent, order, list, map, bus.
 - The "examples" directory contains the primary examples of list, text, and map.
 
 # Usage
@@ -58,7 +58,7 @@
 - Implement sets, counters, etc regardless of whether or not they really need this operation event system.
 - Known issue: in order.js, ids will not remain sorted by agent name. Why is this? Current have to resort on every iteration.
 - Where possible, stop using await delay in test example code, and use on('change') instead. Review where and how this could be possible.
-- For basic list data, when interleav is true, be able to add multiple operations at once so this are a contiguous (id) batch.
+- For basic list data, when interleave is true, be able to add multiple operations at once so this are a contiguous (id) batch.
 - in agent,js, allow clock handling and forwarding to be more robust. For example, with delayed system clock update, still forward the system clock to other agents even if not applied locally?
 - Rewrite "How it works" to cover each source file and each example file.
 
