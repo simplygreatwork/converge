@@ -36,7 +36,7 @@
 - Edges cases still need to be handled separately.
 - For example, allowing other agents to act as surrogates if and when the source of truth agent is offline.
 
-- # Highlights: Interleaving
+# Highlights: Interleaving
 - With interleave set to false, concurrent textual edits among peers will never interleave, never intersperse.
 - The only concession is when a text editing user moves the caret via keyboard or mouse.
 - And then may text block interleaving occur.
