@@ -51,6 +51,8 @@ export const make_test = (name, options) => {
 		bus.on('end-suite', pass => {
 			if (pass) console.log(`\nAll tests passed.`)
 			else console.log(`\nSome tests failed.`)
+			if (pass) document.querySelector('body').style.backgroundColor = 'hsl(120, 80%, 80%)'
+			else document.querySelector('body').style.backgroundColor = 'hsl(0, 80%, 80%)'
 		})
 	}
 }

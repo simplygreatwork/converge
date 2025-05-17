@@ -5,10 +5,9 @@ import { make_order } from 'order'
 export function make_agent(name, interleave = true) {
 	
 	const verbose = false
-	let agents = ['a', 'b', 'c', 'd']				// fixme: have all agents announce/introduce themselves
+	let agents = ['a', 'b', 'c', 'd']		// todo: have all agents announce/introduce themselves
 	let clock = 0
 	let clock_system = null
-	let upgrade_clock = false
 	let network
 	const local = make_bus()
 	const events = new Map()
@@ -16,7 +15,7 @@ export function make_agent(name, interleave = true) {
 	const outbox = make_outbox()
 	const inbox = make_inbox()
 	const agent = {}
-	return Object.assign(agent, { init, add, promote, connect, disconnect, list, to_string, on }).init()
+	return Object.assign(agent, { init, add, promote, list, connect, disconnect, to_string, on }).init()
 	
 	function init() {
 		
@@ -65,7 +64,7 @@ export function make_agent(name, interleave = true) {
 			setTimeout(() => resolve(), 100)
 		})
 	}
-
+	
 	function list() {
 		console.log(`  ${to_string()}`)
 	}

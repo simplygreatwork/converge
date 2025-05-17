@@ -42,6 +42,13 @@
 - And then may text block interleaving occur.
 
 # Roadmap, To Do, Ideas
+- Known issue: if you load the test examples in a background tab instead of in the foreground, the tests will likely fail.
+- Color code example tests background color for pass/fail (green/red) (done)
+- Perhaps agent.list/agent/to_string should actually be agent.ids() because it returns event ids
+- Perhaps move agent's walker out of agent.js and into its own file as walker.js?
+- Or instead consider moving walker directly into agent exposing a member getter function on agent: walker() (?)
+- In order.js, agent.js, consider using syntax const [agent,] = id instead of const agent = id[0] 
+- In order.js, agent.js, consider using syntax const [,clock] = id instead of const clock = id[1] 
 - For the example "text.html", implement offline edit mode, connect and disconnect, to help test interleaving prevention.
 - Agents should announce themselves on the network when they connect. This is how the agents will likely discover the availability of other agents.
 - Edge case: discover and update missing data using surrogates when the source of truth agent for the missing data is offline.
