@@ -56,12 +56,13 @@ export function make_agent(name, interleave = true) {
 	
 	async function disconnect() {
 		
+		const result = network
 		return new Promise(resolve => {
 			outbox.flush()
 			network = null
 			local.emit('disconnected')
 			inbox.off()
-			setTimeout(() => resolve(), 100)
+			setTimeout(() => resolve(result), 100)
 		})
 	}
 	

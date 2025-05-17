@@ -21,6 +21,7 @@ export function make_list(agent, emit = () => {}) {
 			emit('change', { type: 'merge', diffs, list })
 		})
 		list.name = () => agent.name()
+		list.agent = () => agent
 		list.promote = () => agent.promote()
 		return list
 	}

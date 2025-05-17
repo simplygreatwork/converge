@@ -31,7 +31,6 @@
 	const log = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
-	make_ui(bus)
 	
 	make_test('networked text').suite((it, wait) => {
 		
@@ -43,6 +42,7 @@
 			a = make_list('a', network, interleave)
 			b = make_list('b', network, interleave)
 			c = make_list('c', network, interleave)
+			make_ui(bus, [a, b, c])
 			a.insert('o', 'root')
 			a.insert('n', 'root')
 			a.insert('e', 'root')
@@ -72,34 +72,50 @@
 			c.insert('x', 'root')
 			c.promote()
 			show(a, b, c)
-			await delay(2000)
+			await delay(1000)
 			show(a, b, c)
-			await delay(2000)
+			await delay(1000)
 			then(matches(a, b))
 		})
 		
 	}).run()
 	
-	export function make_ui(bus) {
+	function make_list(name, network, interleave = true) {
 		
-		bus.on(`reset`, change => {
-			$(`#a input`).value = ``
-			$(`#b input`).value = ``
-			$(`#c input`).value = ``
-		})
+		const agent = make_agent(name, interleave).connect(network)
+		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
+		const ids = ['root']
+		const list = Object.assign({}, list_)
+		return Object.assign(list, { insert, ids: index => ids.at(index) })
+		
+		function insert(value, parent, grouped) {
+			
+			if (typeof parent == 'number') parent = ids.at(parent)
+			ids.push(list_.insert(value, parent, grouped))
+			return ids.at(-1)
+		}
+	}
+	
+	// fixme: when a list is not connected, it should update it's model but not send to outbox
+	
+	export function make_ui(bus, lists) {
+		
 		bus.on(`change`, change => {
+			if (false) console.log(`change.type: ${change.type}`)
 			$(`#${change.list.name()} input`).value = change.list.to_string()
 		})
-		bus.on(`change`, change => {
-			if (false) console.log(`  change to list "${change.list.name()}": ${change.type}`)
+		bus.on(`reset`, change => {
+			lists.forEach(list => $(`#${list.name()} input`).value = ``)
+		})
+		lists.forEach(list => {
+			watch_keydown(list)
+			watch_promote(list)
+			watch_connection(list)
 		})
 		
-		watch_keydown($(`#a input`))
-		watch_keydown($(`#b input`))
-		watch_keydown($(`#c input`))
-		
-		function watch_keydown(element) {
+		function watch_keydown(list) {
 			
+			const element = $(`#${list.name()} input`)
 			element.addEventListener('keydown', event => {
 				if (event.key.length !== 1) return
 				const index = event.target.selectionStart
@@ -110,16 +126,9 @@
 			})
 		}
 		
-		watch_promote($(`#a input`), () => a)
-		watch_promote($(`#b input`), () => b)
-		watch_promote($(`#c input`), () => c)
-		
-		// fixme: do not promote with regular key input
-		// reconsider that promote only occurs on next input like undo manager works
-		// maybe will be ok to apply on next input?
-		
-		function watch_promote(element, list) {
+		function watch_promote(list) {
 			
+			const element = $(`#${list.name()} input`)
 			const promote = false
 			let keydown = false, input = false
 			element.addEventListener('keydown', event => keydown = true)
@@ -136,6 +145,18 @@
 				keydown = input = false
 			})
 		}
+		
+		function watch_connection(list) {
+			
+			const element = $(`#${list.name()} [type="checkbox"]`)
+			let network_ = network
+			element.addEventListener('change', async (event) => {
+				if (element.checked) console.log(`list "${list.name()}" will connect.`)
+				else console.log(`list "${list.name()}" will disconnect.`)
+				if (element.checked) list.agent().connect(network_)
+				else network_ = await list.agent().disconnect()
+			})
+		}
 	}
 	
 	function show() {
@@ -150,22 +171,6 @@
 		return new Promise(resolve => {
 			setTimeout(() => resolve(), period)
 		})
-	}
-	
-	function make_list(name, network, interleave = true) {
-		
-		const agent = make_agent(name, interleave).connect(network)
-		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
-		const ids = ['root']
-		const list = Object.assign({}, list_)
-		return Object.assign(list, { insert, ids: index => ids.at(index) })
-		
-		function insert(value, parent, grouped) {
-			
-			if (typeof parent == 'number') parent = ids.at(parent)
-			ids.push(list_.insert(value, parent, grouped))
-			return ids.at(-1)
-		}
 	}
 	
 	function matches(a, b) {
