@@ -139,10 +139,12 @@ export function make_agent(name, interleave = true) {
 		function init() {
 			
 			local.on('connected', () => {
-				offs[0] = network.on('connected', name_ => {
+				const on = network.on
+				network.on = (...arguments_) => offs.push(on(...arguments_))
+				network.on('connected', name_ => {
 					console.log(`  "${name}" observes "${name_}" has connected.`)
 				})
-				offs[1] = network.on('event', (event, clock_system_) => {
+				network.on('event', (event, clock_system_) => {
 					const id = event.id
 					events.set(id, event)
 					order.add(id)
@@ -150,7 +152,7 @@ export function make_agent(name, interleave = true) {
 					else clock = Math.max(clock, clock_system_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
-				offs[2] = network.on('events-request', ({ to, given }) => {
+				network.on('events-request', ({ to, given }) => {
 					const from = name
 					if (to == from) return
 					const ids = []
