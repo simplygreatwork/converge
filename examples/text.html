@@ -96,7 +96,8 @@
 		}
 	}
 	
-	// fixme: when a list is not connected, it should update it's model but not send to outbox
+	// fixme: place selection caret correctly after each edit
+	// fixme: seeing edit abnormalities with multiple edits to a disconnected list
 	
 	export function make_ui(bus, lists) {
 		
@@ -119,8 +120,8 @@
 			element.addEventListener('keydown', event => {
 				if (event.key.length !== 1) return
 				const index = event.target.selectionStart
-				const id = a.node_at(index).id
-				a.insert(event.key, id)
+				const id = list.node_at(index).id
+				list.insert(event.key, id)
 				event.stopPropagation()
 				event.preventDefault()
 			})

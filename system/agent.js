@@ -23,6 +23,7 @@ export function make_agent(name, interleave = true) {
 		agent.name = () => name
 		agent.events = () => events
 		agent.order = () => order
+		agent.connected = () => network !== null
 		return agent
 	}
 	
