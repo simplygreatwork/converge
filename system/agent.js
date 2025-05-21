@@ -5,6 +5,7 @@ import { make_order } from 'order'
 export function make_agent(name, interleave = true) {
 	
 	const verbose = false
+	const log = console.log
 	let agents = ['a', 'b', 'c', 'd']		// todo: have all agents announce/introduce themselves
 	let clock = 0
 	let clock_system = null
@@ -12,6 +13,7 @@ export function make_agent(name, interleave = true) {
 	const local = make_bus()
 	const events = new Map()
 	const order = make_order(events)
+	const extents = {}
 	const outbox = make_outbox()
 	const inbox = make_inbox()
 	const agent = {}
@@ -29,6 +31,7 @@ export function make_agent(name, interleave = true) {
 	
 	function add(op, grouped) {
 		
+		if (verbose) log(`adding operation ${JSON.stringify(op)} to agent "${name}"`)
 		op = op || { type: null }
 		const id = [name, clock++]
 		const event = { id, op }
@@ -50,6 +53,7 @@ export function make_agent(name, interleave = true) {
 	
 	function connect(bus) {
 		
+		// when connecting, if anything in outbox, need to send
 		network = bus
 		local.emit('connected')
 		return agent
@@ -68,7 +72,7 @@ export function make_agent(name, interleave = true) {
 	}
 	
 	function list() {
-		console.log(`  ${to_string()}`)
+		log(`  ${to_string()}`)
 	}
 	
 	function to_string() {
@@ -90,7 +94,7 @@ export function make_agent(name, interleave = true) {
 		function init() {
 			
 			local.on('connected', () => {
-				console.log(`  "${name}" has connected`)
+				log(`  "${name}" has connected with queue high "${JSON.stringify(high)}" and queue low "${JSON.stringify(low)}"`)
 				push('connected', name, 'high')
 				request_updates()
 				run()
@@ -102,7 +106,10 @@ export function make_agent(name, interleave = true) {
 			
 			agents.forEach(agent => {
 				if (agent === name) return
-				push('events-request', { to: name, given: order.extract(agent) }, 'high')
+				const to = name
+				const extent = extents[agent] || 0
+				const given = order.extract(agent, extent)
+				push('events-request', { to, extent, given }, 'high')
 			})
 		}
 		
@@ -140,12 +147,13 @@ export function make_agent(name, interleave = true) {
 		function init() {
 			
 			local.on('connected', () => {
-				const on = network.on
-				network.on = (...arguments_) => offs.push(on(...arguments_))
-				network.on('connected', name_ => {
-					console.log(`  "${name}" observes "${name_}" has connected.`)
+				off()
+				// const on = network.on
+				// network.on = (...arguments_) => offs.push(on(...arguments_))
+				offs[offs.length] = network.on('connected', name_ => {
+					log(`  "${name}" observes "${name_}" has connected.`)
 				})
-				network.on('event', (event, clock_system_) => {
+				offs[offs.length] = network.on('event', (event, clock_system_) => {
 					const id = event.id
 					events.set(id, event)
 					order.add(id)
@@ -153,22 +161,26 @@ export function make_agent(name, interleave = true) {
 					else clock = Math.max(clock, clock_system_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
-				network.on('events-request', ({ to, given }) => {
+				offs[offs.length] = network.on('events-request', ({ to, extent, given }) => {
 					const from = name
 					if (to == from) return
 					const ids = []
-					order.diff({ from, to, given }, id => {
+					order.diff(from, extent, given, id => {
 						ids.push(id)
 						outbox.push('event', events.get(id), 'low')
 					})
-					if (verbose && ids.length > 0) console.log(`    updated from "${name}" to "${to}": ${ids}`)
+					if (verbose && ids.length > 0) log(`    updated from "${name}" to "${to}": ${ids}`)
 				})
 			})
+			
 			return inbox
 		}
 		
 		function off() {
+			
+			console.log(`called off with agent "${name}" with offs length: ${offs.length}`)
 			offs.forEach(off => off())
+			offs.splice(0, offs.length)
 		}
 	}
 }

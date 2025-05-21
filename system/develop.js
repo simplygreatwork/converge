@@ -126,3 +126,15 @@ function make_bus() {
 		keys[key].forEach((fn) => fn.apply(this, arguments_))
 	}
 }
+
+export function watch_errors() {
+	
+	window.addEventListener('error', event => {
+		const { message, source, lineno, colno, error } = event
+		if (true) document.querySelector('body').style.backgroundColor = 'hsl(0, 80%, 80%)'
+		if (false) window.alert(`event.message: ${message}`)
+		if (true) console.log(message)
+		// todo: make_console should be handling printing of both error and log
+		// instead of using this relay from error to log
+	})
+}

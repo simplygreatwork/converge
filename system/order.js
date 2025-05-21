@@ -2,6 +2,7 @@
 export function make_order(events) {
 	
 	const verbose = false
+	const log = console.log
 	const order = {}
 	const queue = {}
 	const array = []
@@ -30,24 +31,25 @@ export function make_order(events) {
 		return clock_a - clock_b
 	}
 	
-	function extract(agent) {
+	function extract(agent, extent) {
 		
 		return array
+		.slice(extent)
 		.map(ids => ids.filter(id => id[0] === agent))
-		.map((each, index) => each.length === 1 ? index : -1)
+		.map((each, index) => each.length === 1 ? each[0][1] : -1)
 		.filter(each => each > -1)
 	}
 	
-	function diff({ from, to, given }, fn) {
+	function diff(agent, extent, given, fn) {
 		
-		if (verbose) console.log(`walk from "${from}" to "${to}" excluding ${exclude}`)
-		for (let clock = 0; clock < array.length; clock++) {
+		if (verbose) log(`diff ids of agent "${agent}" beginning with extent "${extent}" excluding given: "${given}".`)
+		for (let clock = extent + 1; clock < array.length; clock++) {
 			if (given.includes(clock)) continue
 			if (array[clock] === undefined) array[clock] = []
 			const ids = array[clock]
 			ids.sort(comparator)
 			ids.forEach(id => {
-				if (id[0] === from) fn(id)
+				if (id[0] === agent) fn(id)
 			})
 		}
 	}
@@ -62,7 +64,7 @@ export function make_order(events) {
 			const ids = array[clock]
 			if (ids === undefined) continue
 			if (ids === null) continue
-			ids.sort(comparator)						// issue: ought to be able to presort in update_order
+			ids.sort(comparator)								// issue: ought to be able to presort in update_order
 			ids.reverse().forEach(id => {
 				if (is_sequential(id)) queue_sequence(id)
 				else if (flush_sequence(id, id => fn(id, index++, stop))) ;

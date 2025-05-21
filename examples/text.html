@@ -11,8 +11,7 @@
 </div>
 <div class="console"></div>
 <script type="importmap">{"imports": {
-	"test": "../system/develop.js",
-	"console": "../system/develop.js",
+	"develop": "../system/develop.js",
 	"bus": "../system/bus.js",
 	"agent": "../system/agent.js",
 	"order": "../system/order.js",
@@ -20,8 +19,9 @@
 }}</script>
 <script type="module">
 	
-	import { make_test } from 'test'
-	import { make_console } from 'console'
+	import { make_test } from 'develop'
+	import { make_console } from 'develop'
+	import { watch_errors } from 'develop'
 	import { make_agent } from 'agent'
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
@@ -31,6 +31,7 @@
 	const log = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
+	watch_errors()
 	
 	make_test('networked text').suite((it, wait) => {
 		
@@ -120,7 +121,8 @@
 			element.addEventListener('keydown', event => {
 				if (event.key.length !== 1) return
 				const index = event.target.selectionStart
-				const id = list.node_at(index).id
+				const node = list.node_at(index)
+				const id = node ? node.id : 'root'
 				list.insert(event.key, id)
 				event.stopPropagation()
 				event.preventDefault()
