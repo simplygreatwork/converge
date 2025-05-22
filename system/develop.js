@@ -134,7 +134,5 @@ export function watch_errors() {
 		if (true) document.querySelector('body').style.backgroundColor = 'hsl(0, 80%, 80%)'
 		if (false) window.alert(`event.message: ${message}`)
 		if (true) console.log(message)
-		// todo: make_console should be handling printing of both error and log
-		// instead of using this relay from error to log
 	})
 }

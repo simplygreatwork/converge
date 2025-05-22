@@ -97,14 +97,15 @@
 		}
 	}
 	
-	// fixme: place selection caret correctly after each edit
-	// fixme: seeing edit abnormalities with multiple edits to a disconnected list
-	
 	export function make_ui(bus, lists) {
 		
 		bus.on(`change`, change => {
 			if (false) console.log(`change.type: ${change.type}`)
-			$(`#${change.list.name()} input`).value = change.list.to_string()
+			const textinput = $(`#${change.list.name()} input`)
+			const { selectionStart, selectionEnd } = textinput
+			textinput.value = change.list.to_string()
+			textinput.selectionStart = selectionStart + 1
+			textinput.selectionEnd = selectionEnd + 1
 		})
 		bus.on(`reset`, change => {
 			lists.forEach(list => $(`#${list.name()} input`).value = ``)

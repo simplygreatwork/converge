@@ -45,7 +45,7 @@ export function make_agent(name, interleave = true) {
 	function promote() {
 		
 		if (interleave) return
-		if (clock_system === null) clock_system = clock 		
+		if (clock_system === null) clock_system = clock
 		// if (clock_system !== null) return
 		clock = Math.max(clock, clock_system) + 1
 		clock_system = null
@@ -53,7 +53,6 @@ export function make_agent(name, interleave = true) {
 	
 	function connect(bus) {
 		
-		// when connecting, if anything in outbox, need to send
 		network = bus
 		local.emit('connected')
 		return agent
@@ -76,7 +75,7 @@ export function make_agent(name, interleave = true) {
 	}
 	
 	function to_string() {
-		return `agent "${name}": ${order.to_string()}`
+		return `Agent "${name}": ${order.to_string()}`
 	}
 	
 	function on() {
@@ -94,7 +93,7 @@ export function make_agent(name, interleave = true) {
 		function init() {
 			
 			local.on('connected', () => {
-				log(`  "${name}" has connected with queue high "${JSON.stringify(high)}" and queue low "${JSON.stringify(low)}"`)
+				if (verbose) log(`  "Agent ${name}" has connected with queue high "${JSON.stringify(high)}" and queue low "${JSON.stringify(low)}"`)
 				push('connected', name, 'high')
 				request_updates()
 				run()
@@ -169,7 +168,7 @@ export function make_agent(name, interleave = true) {
 						ids.push(id)
 						outbox.push('event', events.get(id), 'low')
 					})
-					if (verbose && ids.length > 0) log(`    updated from "${name}" to "${to}": ${ids}`)
+					if (verbose && ids.length > 0) log(`    updated ids from "${name}" to "${to}": ${ids}`)
 				})
 			})
 			
@@ -178,7 +177,6 @@ export function make_agent(name, interleave = true) {
 		
 		function off() {
 			
-			console.log(`called off with agent "${name}" with offs length: ${offs.length}`)
 			offs.forEach(off => off())
 			offs.splice(0, offs.length)
 		}

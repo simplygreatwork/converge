@@ -3,9 +3,9 @@ export function make_order(events) {
 	
 	const verbose = false
 	const log = console.log
-	const order = {}
 	const queue = {}
 	const array = []
+	const order = {}
 	return Object.assign(order, { init, add, extract, diff, rewind, flatten, to_string }).init()
 	
 	function init() {
