@@ -6,14 +6,20 @@ export function show() {
 	})
 }
 
-export function matches(a, b) {
-	
-	return a.to_string() === b.to_string()
-}
-
 export async function delay(period) {
 	
 	return new Promise(resolve => {
 		setTimeout(() => resolve(), period)
 	})
+}
+	
+export function settles(lists, string, fn, index = 0) {
+	
+	const max = 2000, delay = 100
+	const attempts = max / delay
+	if (lists.every(value => value.to_string() === string)) return fn(true)
+	setTimeout(() => {
+		if (index === attempts) fn(false)
+		else settles(lists, string, fn, ++index)
+	}, delay)
 }

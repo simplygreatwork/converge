@@ -72,11 +72,11 @@
 			c.insert('i', 'root')
 			c.insert('x', 'root')
 			c.promote()
-			show(a, b, c)
-			await delay(1000)
-			show(a, b, c)
-			await delay(1000)
-			then(matches(a, b))
+			settles([a, b, c], 'onetwothreefourfivesix', async settled => {
+				show(a, b, c)
+				await delay(500)
+				then(settled)
+			})
 		})
 		
 	}).run()
@@ -166,7 +166,7 @@
 	function show() {
 		
 		Array.from(arguments).forEach(list => {
-			console.log(`  text "${list.name()}": ${JSON.stringify(list.to_array())}`)
+			console.log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
 		})
 	}
 	
@@ -177,8 +177,15 @@
 		})
 	}
 	
-	function matches(a, b) {
-		return a.to_string() === b.to_string()
+	function settles(lists, string, fn, index = 0) {
+		
+		const max = 2000, delay = 100
+		const attempts = max / delay
+		if (lists.every(value => value.to_string() === string)) return fn(true)
+		setTimeout(() => {
+			if (index === attempts) fn(false)
+			else settles(lists, string, fn, ++index)
+		}, delay)
 	}
 	
 </script>

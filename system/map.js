@@ -28,7 +28,7 @@ export function make_map(agent, emit = () => {}) {
 		
 		ops[['set', 'redo']] = (content, { op }) => content.push(op.key, op.value)
 		ops[['set', 'undo']] = (content, { op }) => content.pop(op.key)
-		ops[['remove', 'redo']] = (content, { op }) => {}
+		ops[['remove', 'redo']] = (content, { op }) => content.push(op.remove, undefined)
 		ops[['remove', 'undo']] = (content, { op }) => {}
 	}
 	
@@ -95,7 +95,11 @@ export function make_map(agent, emit = () => {}) {
 		function to_map() {
 			
 			const result = new Map()
-			map.keys().forEach(key => result.set(key, peek(key)))
+			map.keys().forEach(key => {
+				const value = peek(key)
+				if (value === undefined) result.delete(key)
+				else result.set(key, value)
+			})
 			return result
 		}
 	}

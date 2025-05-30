@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>networked text</title>
+</head>
+<body>
+<div class="console"></div>
+<script type="importmap">{"imports": {
+	"develop": "../system/develop.js",
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"list": "../system/list.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'develop'
+	import { make_console } from 'develop'
+	import { watch_errors } from 'develop'
+	import { make_agent } from 'agent'
+	import { make_list as make_list_} from 'list'
+	import { make_bus } from 'bus'
+	
+	const $ = selector => document.querySelector(selector)
+	const reset = () => bus.emit('reset')
+	const log = make_console('.console')
+	let network, a, b, c, d
+	let bus = make_bus()
+	watch_errors()
+	
+	make_test('networked text').suite((it, wait) => {
+		
+		wait('connect 4 lists and show member agents of each', then => {
+			
+			reset()
+			network = make_bus()
+			a = make_list('a', network)
+			b = make_list('b', network)
+			c = make_list('c', network)
+			d = make_list('d', network)
+			b.insert('b')
+			a.insert('a')
+			c.insert('c')
+			d.insert('d')
+			settles([a, b, c, d], 'abcd', async settled => {
+				show(a, b, c, d)
+				show_members(a, b, c, d)
+				await delay(500)
+				then(settled)
+			})
+		})
+		
+	}).run()
+	
+	function make_list(name, network, interleave = true) {
+		
+		const agent = make_agent(name, interleave).connect(network)
+		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
+		const ids = ['root']
+		const list = Object.assign({}, list_)
+		return Object.assign(list, { insert, ids: index => ids.at(index) })
+		
+		function insert(value, parent, grouped) {
+			
+			if (typeof parent == 'number') parent = ids.at(parent)
+			ids.push(list_.insert(value, parent, grouped))
+			return ids.at(-1)
+		}
+	}
+	
+	function show_members() {
+		
+		Array.from(arguments).forEach(list => {
+			const members = Array.from(list.agent().agents()).sort()
+			console.log(`  list "${list.name()}" members: ${JSON.stringify(members)}`)
+		})
+	}
+	
+	function show() {
+		
+		Array.from(arguments).forEach(list => {
+			console.log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+		})
+	}
+	
+	async function delay(period) {
+		
+		return new Promise(resolve => {
+			setTimeout(() => resolve(), period)
+		})
+	}
+	
+	function settles(lists, string, fn, index = 0) {
+		
+		const max = 2000, delay = 100
+		const attempts = max / delay
+		if (lists.every(value => value.to_string() === string)) return fn(true)
+		setTimeout(() => {
+			if (index === attempts) fn(false)
+			else settles(lists, string, fn, ++index)
+		}, delay)
+	}
+	
+</script>
+</body>
+</html>

@@ -34,7 +34,7 @@
 	
 	make_test('networked map').suite((it, wait) => {
 		
-		wait('sync 2 maps', async (then) => {
+		wait('sync 2 maps', then => {
 			
 			reset()
 			network = make_bus()
@@ -48,13 +48,14 @@
 			b.set('2', 1)
 			b.set('2', 2)
 			b.remove('2')
-			show(a, b)
-			await delay(1000)
-			show(a, b)
-			then(matches(a, b))
+			settles([a, b], '1,1', async settled => {
+				show(a, b)
+				await delay(500)
+				then(settled)
+			})
 		})
 		
-		wait('sync 2 maps again', async (then) => {
+		wait('sync 2 maps again', then => {
 			
 			reset()
 			network = make_bus()
@@ -63,16 +64,24 @@
 			a.set('1', 1)
 			a.set('2', 1)
 			a.set('2', 2)
-			show(a, b)
-			await delay(100)
-			show(a, b)
-			then(matches(a, b))
+			settles([a, b], '1,1,2,2', async settled => {
+				show(a, b)
+				await delay(500)
+				then(settled)
+			})
 		})
 		
 	}).run()
 	
 	function make_ui(bus) {
 		return
+	}
+	
+	function make_map(name, network, interleave = true) {
+		
+		const agent = make_agent(name, interleave).connect(network)
+		const map = make_map_(agent)
+		return map
 	}
 	
 	function show() {
@@ -89,15 +98,15 @@
 		})
 	}
 	
-	function make_map(name, network, interleave = true) {
+	function settles(lists, string, fn, index = 0) {
 		
-		const agent = make_agent(name, interleave).connect(network)
-		const map = make_map_(agent)
-		return map
-	}
-	
-	function matches(a, b) {
-		return a.to_string() === b.to_string()
+		const max = 2000, delay = 100
+		const attempts = max / delay
+		if (lists.every(value => value.to_string() === string)) return fn(true)
+		setTimeout(() => {
+			if (index === attempts) fn(false)
+			else settles(lists, string, fn, ++index)
+		}, delay)
 	}
 	
 </script>

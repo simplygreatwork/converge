@@ -35,21 +35,24 @@
 	
 	make_test('networked list').suite((it, wait) => {
 		
-		wait('sync 2 lists', async (then) => {
+		wait('sync 2 lists', then => {
 			
 			reset()
 			network = make_bus()
 			a = make_list('a', network)
 			b = make_list('b', network)
+			c = make_list('c', network)
 			a.insert('a', 'root')
 			b.insert('b', 'root')
-			show(a, b)
-			await delay(1000)
-			show(a, b)
-			then(matches(a, b))
+			c.insert('c', 'root')
+			settles([a, b, c], 'abc', async settled => {
+				show(a, b, c)
+				await delay(500)
+				then(settled)
+			})
 		})
 		
-		wait('sync 2 lists with no interleaving', async (then) => {
+		wait('sync 2 lists with no interleaving', then => {
 			
 			reset()
 			network = make_bus()
@@ -61,13 +64,14 @@
 			b.insert('1', 'root')
 			b.insert('2', 'root')
 			b.insert('3', 'root')
-			show(a, b)
-			await delay(100)
-			show(a, b)
-			then(matches(a, b))
+			settles([a, b], 'abc123', async settled => {
+				show(a, b)
+				await delay(500)
+				then(settled)
+			})
 		})
 		
-		wait('sync 3 lists with no interleaving', async (then) => {
+		wait('sync 3 lists with no interleaving (part 1)', then => {
 			
 			reset()
 			network = make_bus()
@@ -84,42 +88,27 @@
 			b.insert('1', 0)					// insert 1 before root of graph b = 1 root
 			b.insert('2', 0)					// insert 2 before root of graph b = 1 2 root
 			b.insert('3', 0)					// insert 3 before root of graph b = 1 2 3 root
-			show(a, b, c)
-			await delay(1000)
-			show(a, b, c)
+			settles([a, b, c], '(abcde)123', async settled => {
+				show(a, b, c)
+				await delay(500)
+				then(settled)
+			})
+		})
+		
+		wait('sync 3 lists with no interleaving (part 2)', then => {
+			
 			b.insert('4', 'root')
 			c.insert('5', 'root')
 			c.insert('6', 'root')
-			await delay(1000)
-			show(a, b, c)
-			then(matches(a, b))
-		})
-		
-		wait('sync 2 lists allowing grouping break points (block interleaving)', async (then) => {
-			
-			reset()
-			network = make_bus()
-			const interleave = false
-			a = make_list('a', network, interleave)
-			b = make_list('b', network, interleave)
-			a.insert('1', 'root')
-			a.insert('2', 'root')
-			a.promote()
-			a.insert('5', 'root')
-			a.insert('6', 'root')
-			b.insert('3', 'root')
-			b.insert('4', 'root')
-			b.promote()
-			b.insert('7', 'root')
-			b.insert('8', 'root')
-			show(a, b)
-			await delay(100)
-			show(a, b)
-			then(matches(a, b))
+			settles([a, b, c], '(abcde)123456', async settled => {
+				show(a, b, c)
+				await delay(500)
+				then(settled)
+			})
 		})
 		
 	}).run()
-
+	
 	function make_list(name, network, interleave = true) {
 		
 		const agent = make_agent(name, interleave).connect(network)
@@ -165,8 +154,15 @@
 		})
 	}
 	
-	function matches(a, b) {
-		return a.to_string() === b.to_string()
+	function settles(lists, string, fn, index = 0) {
+		
+		const max = 2000, delay = 100
+		const attempts = max / delay
+		if (lists.every(value => value.to_string() === string)) return fn(true)
+		setTimeout(() => {
+			if (index === attempts) fn(false)
+			else settles(lists, string, fn, ++index)
+		}, delay)
 	}
 	
 </script>

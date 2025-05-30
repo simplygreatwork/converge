@@ -2,15 +2,16 @@
 import { make_bus } from 'bus'
 import { make_order } from 'order'
 
+const verbose = false
+const log = console.log
+
 export function make_agent(name, interleave = true) {
 	
-	const verbose = false
-	const log = console.log
-	let agents = ['a', 'b', 'c', 'd']		// todo: have all agents announce/introduce themselves
 	let clock = 0
 	let clock_system = null
 	let network
 	const local = make_bus()
+	const agents = new Set()
 	const events = new Map()
 	const order = make_order(events)
 	const extents = {}
@@ -26,6 +27,8 @@ export function make_agent(name, interleave = true) {
 		agent.events = () => events
 		agent.order = () => order
 		agent.connected = () => network !== null
+		agent.agents = () => agents
+		agents.add(name)
 		return agent
 	}
 	
@@ -50,7 +53,7 @@ export function make_agent(name, interleave = true) {
 		clock = Math.max(clock, clock_system) + 1
 		clock_system = null
 	}
-	
+		
 	function connect(bus) {
 		
 		network = bus
@@ -95,15 +98,20 @@ export function make_agent(name, interleave = true) {
 			local.on('connected', () => {
 				if (verbose) log(`  "Agent ${name}" has connected with queue high "${JSON.stringify(high)}" and queue low "${JSON.stringify(low)}"`)
 				push('connected', name, 'high')
+				request_members()
 				request_updates()
 				run()
 			})
 			return outbox
 		}
 		
+		function request_members() {
+			network.emit('members-request')
+		}
+		
 		function request_updates() {
 			
-			agents.forEach(agent => {
+			Array.from(agents).forEach(agent => {
 				if (agent === name) return
 				const to = name
 				const extent = extents[agent] || 0
@@ -147,20 +155,23 @@ export function make_agent(name, interleave = true) {
 			
 			local.on('connected', () => {
 				off()
-				// const on = network.on
-				// network.on = (...arguments_) => offs.push(on(...arguments_))
-				offs[offs.length] = network.on('connected', name_ => {
+				const on = network.on
+				network.on = (...arguments_) => offs.push(on(...arguments_))
+				network.on('connected', name_ => {
 					log(`  "${name}" observes "${name_}" has connected.`)
 				})
-				offs[offs.length] = network.on('event', (event, clock_system_) => {
+				if (false) network.on('members-request', members => log(`on members-request`))
+				if (false) network.on('members', members => log(`on members`))
+				network.on('event', (event, clock_system_) => {
 					const id = event.id
 					events.set(id, event)
 					order.add(id)
+					agents.add(id[0])
 					if (interleave === false) clock_system = clock_system_
 					else clock = Math.max(clock, clock_system_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
-				offs[offs.length] = network.on('events-request', ({ to, extent, given }) => {
+				network.on('events-request', ({ to, extent, given }) => {
 					const from = name
 					if (to == from) return
 					const ids = []
