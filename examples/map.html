@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>networked map</title>
+<title>map</title>
 </head>
 <body>
 <div class="display" style="height:50vh">
@@ -32,7 +32,7 @@
 	let bus = make_bus()
 	make_ui(bus)
 	
-	make_test('networked map').suite((it, wait) => {
+	make_test('map').suite((it, wait) => {
 		
 		wait('sync 2 maps', then => {
 			

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>networked text</title>
+<title>text</title>
 </head>
 <body>
 <div class="display" style="height:50vh">
@@ -33,7 +33,7 @@
 	let bus = make_bus()
 	watch_errors()
 	
-	make_test('networked text').suite((it, wait) => {
+	make_test('text').suite((it, wait) => {
 		
 		wait('sync 3 text fields with no interleaving', async (then) => {
 			
