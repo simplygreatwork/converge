@@ -29,7 +29,7 @@ export function make_map(agent, emit = () => {}) {
 		ops[['set', 'redo']] = (content, { op }) => content.push(op.key, op.value)
 		ops[['set', 'undo']] = (content, { op }) => content.pop(op.key)
 		ops[['remove', 'redo']] = (content, { op }) => content.push(op.remove, undefined)
-		ops[['remove', 'undo']] = (content, { op }) => {}
+		ops[['remove', 'undo']] = (content, { op }) => content.pop(op.remove)
 	}
 	
 	function set(key, value) {
