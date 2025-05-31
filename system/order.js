@@ -1,16 +1,13 @@
 
+const verbose = false
+const log = console.log
+
 export function make_order(events) {
 	
-	const verbose = false
-	const log = console.log
 	const queue = {}
 	const array = []
 	const order = {}
-	return Object.assign(order, { init, add, extract, diff, rewind, flatten, to_string }).init()
-	
-	function init() {
-		return order
-	}
+	return Object.assign(order, { add, extract, diff, rewind, flatten, to_string })
 	
 	function add(id) {
 		
@@ -64,7 +61,7 @@ export function make_order(events) {
 			const ids = array[clock]
 			if (ids === undefined) continue
 			if (ids === null) continue
-			ids.sort(comparator)								// issue: ought to be able to presort in update_order
+			ids.sort(comparator)								// issue: ought to be able to presort when adding the id
 			ids.reverse().forEach(id => {
 				if (is_sequential(id)) queue_sequence(id)
 				else if (flush_sequence(id, id => fn(id, index++, stop))) ;

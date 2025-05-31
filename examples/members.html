@@ -23,7 +23,7 @@
 	
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
-	const log = make_console('.console')
+	const { log } = make_console('.console')
 	let network, a, b, c, d
 	let bus = make_bus()
 	watch_errors()
@@ -72,14 +72,14 @@
 		
 		Array.from(arguments).forEach(list => {
 			const members = Array.from(list.agent().agents()).sort()
-			console.log(`  list "${list.name()}" members: ${JSON.stringify(members)}`)
+			log(`  list "${list.name()}" members: ${JSON.stringify(members)}`)
 		})
 	}
 	
 	function show() {
 		
 		Array.from(arguments).forEach(list => {
-			console.log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
 		})
 	}
 	

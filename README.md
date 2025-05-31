@@ -43,7 +43,7 @@
 
 # Roadmap, To Do, Ideas
 - capture and escalate window.onError
-- Agents should announce themselves on the network when they connect. This is how the agents will likely discover the availability of other agents.
+- Agents should announce themselves on the network when they connect. This is one way the agents will could discover the availability of other agents.
 - Still need to implement agent recordkeeping for current update activity.
 - Edge case: discover and update missing data using surrogates when the source of truth agent for the missing data is offline.
 - Known issue: in order.js, ids will not remain sorted by agent name. Why is this? Current have to resort on every iteration.

@@ -28,10 +28,15 @@
 	
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
-	const log = make_console('.console')
+	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
 	watch_errors()
+	
+	// in the UI, when tabbing into a text field, do not want default behavior of select all
+	// if can not modify this behavior, try textareas instead
+	// solving this issue is crucial to testing promotion via selection change on mouse or keyboard
+	// this issue arises mostly because these text inputs are not on separate systems
 	
 	make_test('text').suite((it, wait) => {
 		
@@ -100,7 +105,7 @@
 	export function make_ui(bus, lists) {
 		
 		bus.on(`change`, change => {
-			if (false) console.log(`change.type: ${change.type}`)
+			if (false) log(`change.type: ${change.type}`)
 			const textinput = $(`#${change.list.name()} input`)
 			const { selectionStart, selectionEnd } = textinput
 			textinput.value = change.list.to_string()
@@ -139,12 +144,12 @@
 			element.addEventListener('input', event => input = true)
 			element.addEventListener('focus', () => {})
 			element.addEventListener('mousedown', event => {
-				console.log(`promoting from mousedown`)
+				log(`promoting from mousedown`)
 				if (promote) list().promote()
 			})
 			element.addEventListener('selectionchange', () => {
 				if (! (keydown && ! input)) return
-				console.log(`promoting from selectionchange after keydown with no input`)
+				log(`promoting from selectionchange after keydown with no input`)
 				if (promote) list().promote()
 				keydown = input = false
 			})
@@ -155,8 +160,8 @@
 			const element = $(`#${list.name()} [type="checkbox"]`)
 			let network_ = network
 			element.addEventListener('change', async (event) => {
-				if (element.checked) console.log(`list "${list.name()}" will connect.`)
-				else console.log(`list "${list.name()}" will disconnect.`)
+				if (element.checked) log(`list "${list.name()}" will connect.`)
+				else log(`list "${list.name()}" will disconnect.`)
 				if (element.checked) list.agent().connect(network_)
 				else network_ = await list.agent().disconnect()
 			})
@@ -166,7 +171,7 @@
 	function show() {
 		
 		Array.from(arguments).forEach(list => {
-			console.log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
 		})
 	}
 	

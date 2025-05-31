@@ -28,7 +28,7 @@
 	
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
-	const log = make_console('.console')
+	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
 	make_ui(bus)
@@ -136,14 +136,14 @@
 			$(`#${change.list.name()} span`).innerText = change.list.to_string()
 		})
 		bus.on(`change`, change => {
-			if (false) console.log(`  change to list "${change.list.name()}": ${change.type}`)
+			if (false) log(`  change to list "${change.list.name()}": ${change.type}`)
 		})
 	}
 	
 	function show() {
 		
 		Array.from(arguments).forEach(list => {
-			console.log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
 		})
 	}
 	

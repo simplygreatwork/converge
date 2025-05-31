@@ -62,21 +62,22 @@ export const Test = make_test
 export const make_console = selector => {
 	
 	let console_log = console.log
-	return console.log = function(message) {
-		console_log_terminal(console, message)
-		console_log_browser(console, message)
+	console.log = function(message) {
+		console_log_terminal(message)
+		console_log_browser(message)
 	}
+	return console
 	
-	function console_log_terminal(console, string) {
+	function console_log_terminal(string) {
 		
 		string = dedent(string)
 		string = string.replaceAll('\t', '  ')
 		console_log(string)
 	}
 	
-	function console_log_browser(console, string) {
+	function console_log_browser(string) {
 		
-		if (! window.document) return 
+		if (! window.document) return
 		string = dedent(string)		
 		string = string.replaceAll(' ', '&nbsp;')
 		string = string.replaceAll('\n', '<br>')

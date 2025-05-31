@@ -19,6 +19,8 @@
 }}</script>
 <script type="module">
 	
+	// todo: implement make ui
+	
 	import { make_test } from 'test'
 	import { make_console } from 'console'
 	import { make_agent } from 'agent'
@@ -27,7 +29,7 @@
 	
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
-	const log = make_console('.console')
+	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
 	make_ui(bus)
@@ -87,7 +89,7 @@
 	function show() {
 		
 		Array.from(arguments).forEach(map => {
-			console.log(`  map "${map.name()}": ${JSON.stringify(map.to_string())}`)
+			log(`  map "${map.name()}": ${JSON.stringify(map.to_string())}`)
 		})
 	}
 	

@@ -53,7 +53,7 @@ export function make_agent(name, interleave = true) {
 		clock = Math.max(clock, clock_system) + 1
 		clock_system = null
 	}
-		
+	
 	function connect(bus) {
 		
 		network = bus
