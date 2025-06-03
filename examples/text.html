@@ -5,9 +5,9 @@
 </head>
 <body>
 <div class="display" style="height:50vh">
-<div id="a">a : <input type="text"/><input type="checkbox" checked/></div>
-<div id="b">b : <input type="text"/><input type="checkbox" checked/></div>
-<div id="c">c : <input type="text"/><input type="checkbox" checked/></div>
+<div id="a">a: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
+<div id="b">b: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
+<div id="c">c: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
 </div>
 <div class="console"></div>
 <script type="importmap">{"imports": {
@@ -25,18 +25,14 @@
 	import { make_agent } from 'agent'
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
-	
+
+	const verbose = false
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
 	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
 	watch_errors()
-	
-	// in the UI, when tabbing into a text field, do not want default behavior of select all
-	// if can not modify this behavior, try textareas instead
-	// solving this issue is crucial to testing promotion via selection change on mouse or keyboard
-	// this issue arises mostly because these text inputs are not on separate systems
 	
 	make_test('text').suite((it, wait) => {
 		
@@ -104,13 +100,15 @@
 	
 	export function make_ui(bus, lists) {
 		
+		let edit	= { index: -1 }		// todo: cannot rely on edit.list/edit.index in a fully distributed text example
+												// would need to publish the new caret position in a distributed manner
 		bus.on(`change`, change => {
 			if (false) log(`change.type: ${change.type}`)
-			const textinput = $(`#${change.list.name()} input`)
-			const { selectionStart, selectionEnd } = textinput
-			textinput.value = change.list.to_string()
-			textinput.selectionStart = selectionStart + 1
-			textinput.selectionEnd = selectionEnd + 1
+			const textarea = $(`#${change.list.name()} textarea`)
+			const { selectionStart, selectionEnd } = textarea
+			textarea.value = change.list.to_string()
+			textarea.selectionStart = selectionStart >= edit.index ? selectionStart + 1 : selectionStart
+			textarea.selectionEnd = selectionEnd >= edit.index ? selectionEnd + 1 : selectionEnd
 		})
 		bus.on(`reset`, change => {
 			lists.forEach(list => $(`#${list.name()} input`).value = ``)
@@ -123,12 +121,14 @@
 		
 		function watch_keydown(list) {
 			
-			const element = $(`#${list.name()} input`)
+			const element = $(`#${list.name()} textarea`)
 			element.addEventListener('keydown', event => {
 				if (event.key.length !== 1) return
 				const index = event.target.selectionStart
-				const node = list.node_at(index)
+				edit = { list, index }
+				const node = list.node_at_index(index)
 				const id = node ? node.id : 'root'
+				if (false) console.log(`index: ${index} index2: ${list.index_at_node(node)}`)
 				list.insert(event.key, id)
 				event.stopPropagation()
 				event.preventDefault()
@@ -137,19 +137,19 @@
 		
 		function watch_promote(list) {
 			
-			const element = $(`#${list.name()} input`)
+			const element = $(`#${list.name()} textarea`)
 			const promote = false
 			let keydown = false, input = false
 			element.addEventListener('keydown', event => keydown = true)
 			element.addEventListener('input', event => input = true)
 			element.addEventListener('focus', () => {})
 			element.addEventListener('mousedown', event => {
-				log(`promoting from mousedown`)
+				if (verbose) log(`promoting from mousedown`)
 				if (promote) list().promote()
 			})
 			element.addEventListener('selectionchange', () => {
 				if (! (keydown && ! input)) return
-				log(`promoting from selectionchange after keydown with no input`)
+				if (verbose) log(`promoting from selectionchange after keydown with no input`)
 				if (promote) list().promote()
 				keydown = input = false
 			})

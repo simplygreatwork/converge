@@ -7,7 +7,7 @@ export function make_list(agent, emit = () => {}) {
 	let content
 	const ops = {}
 	const list = {}
-	return Object.assign(list, { init, insert, remove, to_string, length, to_array, node_at, char_at }).init()
+	return Object.assign(list, { init, insert, remove, to_string, length, to_array, node_at_index, index_at_node, char_at }).init()
 	
 	function init() {
 		
@@ -37,6 +37,7 @@ export function make_list(agent, emit = () => {}) {
 	function insert(value, parent = 'root', grouped) {
 		
 		const event = agent.add({ type: 'insert', value, parent }, grouped)
+		if (false) console.log(`index3: ${index_at_node(value)}`)
 		return apply(event, 'redo', () => emit('change', { type: 'insert', value, parent, list }))
 	}
 	
@@ -89,7 +90,7 @@ export function make_list(agent, emit = () => {}) {
 		return array
 	}
 	
-	function node_at(index) {
+	function node_at_index(index) {
 		
 		let result = null
 		iterate((node, index_) => {
@@ -98,8 +99,26 @@ export function make_list(agent, emit = () => {}) {
 		return result
 	}
 	
+	function node_at_id(id) {
+		
+		let result = null
+		iterate((node, index_) => {
+			if (node.id === id) result = node
+		})
+		return result
+	}
+	
+	function index_at_node(node) {
+		
+		let result = null
+		iterate((node_, index) => {
+			if (node_ === node) result = index
+		})
+		return result
+	}
+	
 	function char_at(index) {
-		return node_at(index).value
+		return node_at_index(index).value
 	}
 	
 	function make_node(id, value = '') {
