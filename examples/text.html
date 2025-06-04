@@ -26,7 +26,7 @@
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
 	
-	const verbose = true
+	const verbose = false
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
 	const { log } = make_console('.console')
@@ -141,9 +141,7 @@
 			const element = $(`#${list.name()} textarea`)
 			let keydown = false, input = false
 			element.addEventListener('keydown', event => keydown = true)
-			element.addEventListener('input-forced', event => {
-				input = true
-			})
+			element.addEventListener('input-forced', event => input = true)
 			element.addEventListener('focus', () => {})
 			element.addEventListener('mousedown', event => {
 				if (verbose) log(`will promote from mousedown`)
