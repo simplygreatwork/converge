@@ -37,6 +37,7 @@ export function make_agent(name, interleave = true) {
 		if (verbose) log(`adding operation ${JSON.stringify(op)} to agent "${name}"`)
 		op = op || { type: null }
 		const id = [name, clock++]
+		if (verbose) log(`new id: ${id}`)
 		const event = { id, op }
 		if (grouped) event.grouped = grouped
 		events.set(id, event)

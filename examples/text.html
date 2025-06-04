@@ -25,8 +25,8 @@
 	import { make_agent } from 'agent'
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
-
-	const verbose = false
+	
+	const verbose = true
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
 	const { log } = make_console('.console')
@@ -130,6 +130,7 @@
 				const id = node ? node.id : 'root'
 				if (false) console.log(`index: ${index} index2: ${list.index_at_node(node)}`)
 				list.insert(event.key, id)
+				element.dispatchEvent(new Event('input-forced'))
 				event.stopPropagation()
 				event.preventDefault()
 			})
@@ -138,20 +139,22 @@
 		function watch_promote(list) {
 			
 			const element = $(`#${list.name()} textarea`)
-			const promote = false
 			let keydown = false, input = false
 			element.addEventListener('keydown', event => keydown = true)
-			element.addEventListener('input', event => input = true)
+			element.addEventListener('input-forced', event => {
+				input = true
+			})
 			element.addEventListener('focus', () => {})
 			element.addEventListener('mousedown', event => {
-				if (verbose) log(`promoting from mousedown`)
-				if (promote) list().promote()
+				if (verbose) log(`will promote from mousedown`)
+				list.promote()
 			})
 			element.addEventListener('selectionchange', () => {
-				if (! (keydown && ! input)) return
-				if (verbose) log(`promoting from selectionchange after keydown with no input`)
-				if (promote) list().promote()
-				keydown = input = false
+				const reset = () => keydown = input = false
+				if (! (keydown && ! input)) return reset()
+				if (verbose) log(`will promote from selectionchange after keydown with no input`)
+				list.promote()
+				reset()
 			})
 		}
 		
