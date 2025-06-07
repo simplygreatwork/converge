@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>text simple</title>
+</head>
+<body>
+<div class="display" style="height:50vh">
+<div id="a">a: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
+<div id="b">b: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
+<div id="c">c: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
+</div>
+<div class="console"></div>
+<script type="importmap">{"imports": {
+	"develop": "../system/develop.js",
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"list": "../system/list.js"
+}}</script>
+<script type="module">
+	
+	import { make_test } from 'develop'
+	import { make_console } from 'develop'
+	import { watch_errors } from 'develop'
+	import { make_agent } from 'agent'
+	import { make_list as make_list_} from 'list'
+	import { make_bus } from 'bus'
+	
+	const verbose = false
+	const $ = selector => document.querySelector(selector)
+	const reset = () => bus.emit('reset')
+	const { log } = make_console('.console')
+	let network, a, b, c
+	let bus = make_bus()
+	watch_errors()
+	
+	make_test('text').suite((it, wait) => {
+		
+		wait('sync 3 text fields with no interleaving', async (then) => {
+			
+			reset()
+			network = make_bus()
+			const interleave = false
+			a = make_list('a', network, interleave)
+			b = make_list('b', network, interleave)
+			c = make_list('c', network, interleave)
+			const lists = [a, b, c]
+			make_ui(bus, lists)
+			a.insert('a', 'root')
+			b.insert('b', 'root')
+			c.insert('c', 'root')
+			settles([a, b, c], 'abc', async settled => {
+				show(a, b, c)
+				await delay(500)
+				then(settled)
+				disconnect_all(lists)
+			})
+		})
+		
+	}).run()
+	
+	function make_list(name, network, interleave = true) {
+		
+		const agent = make_agent(name, interleave).connect(network)
+		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
+		const ids = ['root']
+		const list = Object.assign({}, list_)
+		return Object.assign(list, { insert, ids: index => ids.at(index) })
+		
+		function insert(value, parent, grouped) {
+			
+			if (typeof parent == 'number') parent = ids.at(parent)
+			ids.push(list_.insert(value, parent, grouped))
+			return ids.at(-1)
+		}
+	}
+	
+	export function make_ui(bus, lists) {
+		
+		let edit	= { index: -1 }		// todo: cannot rely on edit.list/edit.index in a fully distributed text example
+												// would need to publish the new caret position in a distributed manner
+		bus.on(`change`, change => {
+			if (false) log(`change.type: ${change.type}`)
+			const textarea = $(`#${change.list.name()} textarea`)
+			const { selectionStart, selectionEnd } = textarea
+			textarea.value = change.list.to_string()
+			textarea.selectionStart = selectionStart >= edit.index ? selectionStart + 1 : selectionStart
+			textarea.selectionEnd = selectionEnd >= edit.index ? selectionEnd + 1 : selectionEnd
+		})
+		bus.on(`reset`, change => {
+			lists.forEach(list => $(`#${list.name()} input`).value = ``)
+		})
+		lists.forEach(list => {
+			watch_keydown(list)
+			if (false) watch_promote(list)
+			watch_connection(list)
+		})
+		
+		function watch_keydown(list) {
+			
+			const element = $(`#${list.name()} textarea`)
+			element.addEventListener('keydown', event => {
+				if (event.key.length !== 1) return
+				const index = event.target.selectionStart
+				edit = { list, index }
+				const node = list.node_at_index(index)
+				const id = node ? node.id : 'root'
+				list.insert(event.key, id)
+				element.dispatchEvent(new Event('input-forced'))
+				event.stopPropagation()
+				event.preventDefault()
+			})
+		}
+		
+		function watch_promote(list) {
+			
+			const element = $(`#${list.name()} textarea`)
+			let keydown = false, input = false
+			element.addEventListener('keydown', event => keydown = true)
+			element.addEventListener('input-forced', event => input = true)
+			element.addEventListener('focus', () => {})
+			element.addEventListener('mousedown', event => {
+				if (verbose) log(`will promote from mousedown`)
+				list.promote()
+			})
+			element.addEventListener('selectionchange', () => {
+				const reset = () => keydown = input = false
+				if (! (keydown && ! input)) return reset()
+				if (verbose) log(`will promote from selectionchange after keydown with no input`)
+				list.promote()
+				reset()
+			})
+		}
+		
+		function watch_connection(list) {
+			
+			const element = $(`#${list.name()} [type="checkbox"]`)
+			let network_ = network
+			element.addEventListener('change', async (event) => {
+				if (element.checked) log(`list "${list.name()}" will connect.`)
+				else log(`list "${list.name()}" will disconnect.`)
+				if (element.checked) list.agent().connect(network_)
+				else network_ = await list.agent().disconnect()
+			})
+		}
+	}
+	
+	function disconnect_all(lists) {
+		
+		lists.forEach(list => {
+			const element = $(`#${list.name()} [type="checkbox"]`)
+			element.click()
+		})
+	}		
+	
+	function show() {
+		
+		Array.from(arguments).forEach(list => {
+			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+		})
+	}
+	
+	async function delay(period) {
+		
+		return new Promise(resolve => {
+			setTimeout(() => resolve(), period)
+		})
+	}
+	
+	function settles(lists, string, fn, index = 0) {
+		
+		const max = 2000, delay = 100
+		const attempts = max / delay
+		if (lists.every(value => value.to_string() === string)) return fn(true)
+		setTimeout(() => {
+			if (index === attempts) fn(false)
+			else settles(lists, string, fn, ++index)
+		}, delay)
+	}
+	
+</script>
+</body>
+</html>

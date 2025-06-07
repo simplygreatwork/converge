@@ -166,7 +166,8 @@ export function make_agent(name, interleave = true) {
 					order.add(id)
 					agents.add(id[0])
 					if (interleave === false) clock_system = clock_system_
-					else clock = Math.max(clock, clock_system_) + 1
+					// else clock = Math.max(clock, clock_system_) + 1		// else breaks data exchange after reconnects
+					clock = Math.max(clock, clock_system_) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
 				on('events-request', ({ to, extent, given }) => {
