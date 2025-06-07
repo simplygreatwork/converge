@@ -33,6 +33,8 @@
 	let network, a, b, c
 	let bus = make_bus()
 	watch_errors()
+	const interleave = false
+	const promote = false
 	
 	make_test('text').suite((it, wait) => {
 		
@@ -40,7 +42,6 @@
 			
 			reset()
 			network = make_bus()
-			const interleave = false
 			a = make_list('a', network, interleave)
 			b = make_list('b', network, interleave)
 			c = make_list('c', network, interleave)
@@ -103,7 +104,6 @@
 		let edit	= { index: -1 }		// todo: cannot rely on edit.list/edit.index in a fully distributed text example
 												// would need to publish the new caret position in a distributed manner
 		bus.on(`change`, change => {
-			if (false) log(`change.type: ${change.type}`)
 			const textarea = $(`#${change.list.name()} textarea`)
 			const { selectionStart, selectionEnd } = textarea
 			textarea.value = change.list.to_string()
@@ -115,7 +115,7 @@
 		})
 		lists.forEach(list => {
 			watch_keydown(list)
-			watch_promote(list)
+			if (promote) watch_promote(list)
 			watch_connection(list)
 		})
 		
@@ -123,12 +123,13 @@
 			
 			const element = $(`#${list.name()} textarea`)
 			element.addEventListener('keydown', event => {
-				if (event.key.length !== 1) return
+				if (event.altKey) return
+				if (event.ctrlKey) return
+				if (event.key.length !== 1) return			// e.g. ArrowLeft
 				const index = event.target.selectionStart
 				edit = { list, index }
 				const node = list.node_at_index(index)
 				const id = node ? node.id : 'root'
-				if (false) console.log(`index: ${index} index2: ${list.index_at_node(node)}`)
 				list.insert(event.key, id)
 				element.dispatchEvent(new Event('input-forced'))
 				event.stopPropagation()
@@ -171,8 +172,8 @@
 	
 	function show() {
 		
-		Array.from(arguments).forEach(list => {
-			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+		Array.from(arguments).forEach(each => {
+			log(`  ${each.name()}: ${JSON.stringify(each.to_string())}`)
 		})
 	}
 	

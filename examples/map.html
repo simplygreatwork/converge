@@ -36,7 +36,7 @@
 	
 	make_test('map').suite((it, wait) => {
 		
-		wait('sync 2 maps', then => {
+		wait('sync 2 maps which have removals', then => {
 			
 			reset()
 			network = make_bus()

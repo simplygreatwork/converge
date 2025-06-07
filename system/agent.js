@@ -7,6 +7,7 @@ const log = console.log
 
 export function make_agent(name, interleave = true) {
 	
+	const trace = window.trace || (() => {})
 	let clock = 0
 	let clock_system = null
 	let network
@@ -123,7 +124,12 @@ export function make_agent(name, interleave = true) {
 		
 		function run() {
 			
-			const emit = ({ key, value }) => network && network.emit(key, value, clock)
+			const emit = ({ key, value }) => {
+				if (! network) return
+				network.emit(key, value, clock)
+				if (key == 'event') trace(`agent "${name}" emitted event ${JSON.stringify(value)}`)
+				// todo: also indicate if emitted event was in response to event-request
+			}
 			if (high[0]) emit(high.shift())
 			if (low[0]) emit(low.shift())
 			if (network) timeout = setTimeout(() => run(), 10)

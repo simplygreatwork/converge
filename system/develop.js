@@ -128,6 +128,27 @@ function make_bus() {
 	}
 }
 
+export function make_tracer() {
+	
+	const lines = []
+	const tracer = {}
+	return Object.assign(tracer, { init, trace, dump }).init()
+	
+	function init() {
+		return tracer
+	}
+	
+	function trace(message) {
+		lines.push(message)
+	}
+	
+	function dump() {
+		
+		console.log('\n*** TRACER DUMP ***\n')
+		lines.forEach(each => console.log(each)) 
+	}
+}
+
 export function watch_errors() {
 	
 	window.addEventListener('error', event => {

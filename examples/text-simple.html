@@ -21,6 +21,7 @@
 	
 	import { make_test } from 'develop'
 	import { make_console } from 'develop'
+	import { make_tracer } from 'develop'
 	import { watch_errors } from 'develop'
 	import { make_agent } from 'agent'
 	import { make_list as make_list_} from 'list'
@@ -32,9 +33,12 @@
 	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
+	window.tracer = make_tracer()
+	window.trace = message => window.tracer.trace(message)
 	watch_errors()
+	console.log(`* Use 'tracer.dump()' in the browser console to print trace details of networking flow.\n\n`)
 	
-	make_test('text').suite((it, wait) => {
+	make_test('text simple').suite((it, wait) => {
 		
 		wait('sync 3 text fields with no interleaving', async (then) => {
 			
@@ -100,8 +104,10 @@
 			
 			const element = $(`#${list.name()} textarea`)
 			element.addEventListener('keydown', event => {
-				if (event.key.length !== 1) return
-				const index = event.target.selectionStart
+				if (event.altKey) return
+				if (event.ctrlKey) return
+				if (event.key.length !== 1) return			// e.g. ArrowLeft
+				const index = element.selectionStart
 				edit = { list, index }
 				const node = list.node_at_index(index)
 				const id = node ? node.id : 'root'
@@ -151,12 +157,12 @@
 			const element = $(`#${list.name()} [type="checkbox"]`)
 			element.click()
 		})
-	}		
+	}
 	
 	function show() {
 		
-		Array.from(arguments).forEach(list => {
-			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
+		Array.from(arguments).forEach(each => {
+			log(`  ${each.name()}: ${JSON.stringify(each.to_string())}`)
 		})
 	}
 	
