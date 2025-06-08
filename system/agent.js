@@ -7,7 +7,6 @@ const log = console.log
 
 export function make_agent(name, interleave = true) {
 	
-	const trace = window.trace || (() => {})
 	let clock = 0
 	let clock_system = null
 	let network
@@ -30,6 +29,7 @@ export function make_agent(name, interleave = true) {
 		agent.connected = () => network !== null
 		agent.agents = () => agents
 		agents.add(name)
+		watch()
 		return agent
 	}
 	
@@ -127,8 +127,9 @@ export function make_agent(name, interleave = true) {
 			const emit = ({ key, value }) => {
 				if (! network) return
 				network.emit(key, value, clock)
-				if (key == 'event') trace(`agent "${name}" emitted event ${JSON.stringify(value)}`)
-				// todo: also indicate if emitted event was in response to event-request
+				// todo: indicate if event-sent is in response to event-request
+				if (key == 'event') local.emit('event-sent', value)
+				if (key == 'events-request') local.emit('events-request-sent', value)
 			}
 			if (high[0]) emit(high.shift())
 			if (low[0]) emit(low.shift())
@@ -196,6 +197,13 @@ export function make_agent(name, interleave = true) {
 			offs.forEach(off => off())
 			offs.splice(0, offs.length)
 		}
+	}
+	
+	function watch() {
+		
+		const trace = window.trace || (() => {})
+		local.on('event-sent', event => trace(`agent "${name}" emitted event ${JSON.stringify(event)}`))
+		local.on('events-request-sent', event => trace(`agent "${name}" emitted events-request`))
 	}
 }
 

@@ -10,22 +10,24 @@
 	"bus": "../system/bus.js",
 	"agent": "../system/agent.js",
 	"order": "../system/order.js",
-	"list": "../system/list.js"
+	"list": "../system/list.js",
+	"utility": "../system/utility.js"
 }}</script>
 <script type="module">
 	
-	import { make_test } from 'develop'
-	import { make_console } from 'develop'
-	import { watch_errors } from 'develop'
+	import { make_console, make_test, make_tracer, watch_errors } from 'develop'
 	import { make_agent } from 'agent'
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
+	import { show, delay, settles } from 'utility'
 	
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
 	const { log } = make_console('.console')
 	let network, a, b, c, d
 	let bus = make_bus()
+	window.tracer = make_tracer()
+	window.trace = message => window.tracer.trace(message)
 	watch_errors()
 	
 	make_test('members').suite((it, wait) => {
@@ -72,33 +74,8 @@
 		
 		Array.from(arguments).forEach(list => {
 			const members = Array.from(list.agent().agents()).sort()
-			log(`  list "${list.name()}" members: ${JSON.stringify(members)}`)
+			log(`  members of "${list.name()}": ${JSON.stringify(members)}`)
 		})
-	}
-	
-	function show() {
-		
-		Array.from(arguments).forEach(list => {
-			log(`  list "${list.name()}": ${JSON.stringify(list.to_array())}`)
-		})
-	}
-	
-	async function delay(period) {
-		
-		return new Promise(resolve => {
-			setTimeout(() => resolve(), period)
-		})
-	}
-	
-	function settles(lists, string, fn, index = 0) {
-		
-		const max = 2000, delay = 100
-		const attempts = max / delay
-		if (lists.every(value => value.to_string() === string)) return fn(true)
-		setTimeout(() => {
-			if (index === attempts) fn(false)
-			else settles(lists, string, fn, ++index)
-		}, delay)
 	}
 	
 </script>

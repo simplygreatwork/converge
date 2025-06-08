@@ -4,34 +4,38 @@
 <title>map</title>
 </head>
 <body>
-<div class="display" style="height:50vh">
+<div style="height:600px">
+<div class="display" style="height:100px">
 <div id="a">a : <span></span></div>
 <div id="b">b : <span></span></div>
 </div>
+<div class="console" style="height:500px;overflow:scroll"></div>
+</div>
 <div class="console"></div>
 <script type="importmap">{"imports": {
-	"test": "../system/develop.js",
-	"console": "../system/develop.js",
+	"develop": "../system/develop.js",
 	"bus": "../system/bus.js",
 	"agent": "../system/agent.js",
 	"order": "../system/order.js",
-	"map": "../system/map.js"
+	"map": "../system/map.js",
+	"utility": "../system/utility.js"
 }}</script>
 <script type="module">
 	
-	// todo: implement make ui
-	
-	import { make_test } from 'test'
-	import { make_console } from 'console'
+	import { make_console, make_test, make_tracer, watch_errors } from 'develop'
 	import { make_agent } from 'agent'
 	import { make_map as make_map_} from 'map'
 	import { make_bus } from 'bus'
+	import { show, delay, settles } from 'utility'
 	
 	const $ = selector => document.querySelector(selector)
 	const reset = () => bus.emit('reset')
 	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
+	window.tracer = make_tracer()
+	window.trace = message => window.tracer.trace(message)
+	watch_errors()
 	make_ui(bus)
 	
 	make_test('map').suite((it, wait) => {
@@ -84,31 +88,6 @@
 		const agent = make_agent(name, interleave).connect(network)
 		const map = make_map_(agent)
 		return map
-	}
-	
-	function show() {
-		
-		Array.from(arguments).forEach(map => {
-			log(`  map "${map.name()}": ${JSON.stringify(map.to_string())}`)
-		})
-	}
-	
-	async function delay(period) {
-		
-		return new Promise(resolve => {
-			setTimeout(() => resolve(), period)
-		})
-	}
-	
-	function settles(lists, string, fn, index = 0) {
-		
-		const max = 2000, delay = 100
-		const attempts = max / delay
-		if (lists.every(value => value.to_string() === string)) return fn(true)
-		setTimeout(() => {
-			if (index === attempts) fn(false)
-			else settles(lists, string, fn, ++index)
-		}, delay)
 	}
 	
 </script>

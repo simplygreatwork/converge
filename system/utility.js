@@ -1,8 +1,8 @@
 
 export function show() {
 	
-	Array.from(arguments).forEach(list => {
-		console.log(`  text "${list.name()}": ${JSON.stringify(list.to_array())}`)
+	Array.from(arguments).forEach(each => {
+		console.log(`  ${each.name()}: ${JSON.stringify(each.to_string())}`)
 	})
 }
 
@@ -12,14 +12,14 @@ export async function delay(period) {
 		setTimeout(() => resolve(), period)
 	})
 }
-	
-export function settles(lists, string, fn, index = 0) {
+
+export function settles(array, string, fn, index = 0) {
 	
 	const max = 2000, delay = 100
 	const attempts = max / delay
-	if (lists.every(value => value.to_string() === string)) return fn(true)
+	if (array.every(value => value.to_string() === string)) return fn(true)
 	setTimeout(() => {
 		if (index === attempts) fn(false)
-		else settles(lists, string, fn, ++index)
+		else settles(array, string, fn, ++index)
 	}, delay)
 }

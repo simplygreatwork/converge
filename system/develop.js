@@ -132,11 +132,7 @@ export function make_tracer() {
 	
 	const lines = []
 	const tracer = {}
-	return Object.assign(tracer, { init, trace, dump }).init()
-	
-	function init() {
-		return tracer
-	}
+	return Object.assign(tracer, { trace, dump })
 	
 	function trace(message) {
 		lines.push(message)

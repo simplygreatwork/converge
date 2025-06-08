@@ -4,27 +4,29 @@
 <title>text</title>
 </head>
 <body>
-<div class="display" style="height:50vh">
+<div style="height:600px">
+<div class="display" style="height:100px">
 <div id="a">a: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
 <div id="b">b: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
 <div id="c">c: <textarea rows="1" cols="40"></textarea><input type="checkbox" checked/></div>
 </div>
-<div class="console"></div>
+<div class="console" style="height:500px;overflow:scroll"></div>
+</div>
 <script type="importmap">{"imports": {
 	"develop": "../system/develop.js",
 	"bus": "../system/bus.js",
 	"agent": "../system/agent.js",
 	"order": "../system/order.js",
-	"list": "../system/list.js"
+	"list": "../system/list.js",
+	"utility": "../system/utility.js"
 }}</script>
 <script type="module">
 	
-	import { make_test } from 'develop'
-	import { make_console } from 'develop'
-	import { watch_errors } from 'develop'
+	import { make_console, make_test, make_tracer, watch_errors } from 'develop'
 	import { make_agent } from 'agent'
 	import { make_list as make_list_} from 'list'
 	import { make_bus } from 'bus'
+	import { show, delay, settles } from 'utility'
 	
 	const verbose = false
 	const $ = selector => document.querySelector(selector)
@@ -32,7 +34,10 @@
 	const { log } = make_console('.console')
 	let network, a, b, c
 	let bus = make_bus()
+	window.tracer = make_tracer()
+	window.trace = message => window.tracer.trace(message)
 	watch_errors()
+	log(`* Use 'tracer.dump()' in the browser console to print trace details of networking flow.\n\n`)
 	const interleave = false
 	const promote = false
 	
@@ -101,8 +106,10 @@
 	
 	export function make_ui(bus, lists) {
 		
-		let edit	= { index: -1 }		// todo: cannot rely on edit.list/edit.index in a fully distributed text example
-												// would need to publish the new caret position in a distributed manner
+		// todo: cannot rely on edit.list/edit.index in a fully distributed text example
+		// would need to publish the new caret position in a distributed manner
+		
+		let edit	= { index: -1 }
 		bus.on(`change`, change => {
 			const textarea = $(`#${change.list.name()} textarea`)
 			const { selectionStart, selectionEnd } = textarea
@@ -168,31 +175,6 @@
 				else network_ = await list.agent().disconnect()
 			})
 		}
-	}
-	
-	function show() {
-		
-		Array.from(arguments).forEach(each => {
-			log(`  ${each.name()}: ${JSON.stringify(each.to_string())}`)
-		})
-	}
-	
-	async function delay(period) {
-		
-		return new Promise(resolve => {
-			setTimeout(() => resolve(), period)
-		})
-	}
-	
-	function settles(lists, string, fn, index = 0) {
-		
-		const max = 2000, delay = 100
-		const attempts = max / delay
-		if (lists.every(value => value.to_string() === string)) return fn(true)
-		setTimeout(() => {
-			if (index === attempts) fn(false)
-			else settles(lists, string, fn, ++index)
-		}, delay)
 	}
 	
 </script>
