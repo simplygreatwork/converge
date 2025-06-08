@@ -42,7 +42,7 @@ export function make_agent(name, interleave = true) {
 		const event = { id, op }
 		if (grouped) event.grouped = grouped
 		events.set(id, event)
-		outbox.push('event', event, 'high')
+		outbox.push('event', { event }, 'high')
 		order.add(id)
 		return event
 	}
@@ -93,13 +93,13 @@ export function make_agent(name, interleave = true) {
 		const high = []
 		const low = []
 		const outbox = {}
-		return Object.assign(outbox, { init, push, flush }).init()
+		return Object.assign(outbox, { init, push, push_later, flush }).init()
 		
 		function init() {
 			
 			local.on('connected', () => {
 				if (verbose) log(`  "Agent ${name}" has connected with queue high "${JSON.stringify(high)}" and queue low "${JSON.stringify(low)}"`)
-				push('connected', name, 'high')
+				push('connected', { name })
 				request_members()
 				request_updates()
 				run()
@@ -118,34 +118,36 @@ export function make_agent(name, interleave = true) {
 				const to = name
 				const extent = extents[agent] || 0
 				const given = order.extract(agent, extent)
-				push('events-request', { to, extent, given }, 'high')
+				push('events-request', { to, extent, given })
 			})
 		}
 		
 		function run() {
 			
-			const emit = ({ key, value }) => {
-				if (! network) return
-				network.emit(key, value, clock)
-				// todo: indicate if event-sent is in response to event-request
-				if (key == 'event') local.emit('event-sent', value)
-				if (key == 'events-request') local.emit('events-request-sent', value)
-			}
 			if (high[0]) emit(high.shift())
 			if (low[0]) emit(low.shift())
 			if (network) timeout = setTimeout(() => run(), 10)
 		}
 		
-		function push(key, value, priority = 'high') {
+		function push(key, value) {
+			high.push({ key, value })
+		}
+		
+		function push_later(key, value) {
+			low.push({ key, value })
+		}
+		
+		function emit({ key, value }) {
 			
-			if (priority === 'high') high.push({ key, value })
-			else if (priority === 'low') low.push({ key, value })
+			if (! network) return
+			value.clock = clock
+			network.emit(key, value)
+			local.emit(`${key}-sent`, value)
 		}
 		
 		function flush() {
 			
 			clearTimeout(timeout)
-			const emit = ({ key, value }) => network && network.emit(key, value, clock)
 			while (high[0] || low[0]) {
 				if (high[0]) emit(high.shift())
 				if (low[0]) emit(low.shift())
@@ -162,19 +164,22 @@ export function make_agent(name, interleave = true) {
 		function init() {
 			
 			local.on('connected', () => {
+				
 				off()
 				const on = (key, fn) => offs[offs.length] = network.on(key, fn)
-				on('connected', name_ => log(`  "${name}" observes "${name_}" has connected.`))
-				if (false) on('members-request', members => log(`on members-request`))
-				if (false) on('members', members => log(`on members`))
-				on('event', (event, clock_system_) => {
-					const id = event.id
+				on('connected', value => log(`  "${name}" observes "${value.name}" has connected.`))
+				on('members-request', members => local.emit(`members-request-received`))
+				on('members', members => local.emit(`members-received`))
+				on('event', value => {
+					const { event, requested } = value
+					const { id } = event
 					events.set(id, event)
 					order.add(id)
 					agents.add(id[0])
-					if (interleave === false) clock_system = clock_system_
-					// else clock = Math.max(clock, clock_system_) + 1		// else breaks data exchange after reconnects
-					clock = Math.max(clock, clock_system_) + 1
+					if (interleave === false) clock_system = value.clock
+					// else below breaks data exchange after reconnects
+					// else clock = Math.max(clock, clock_system_) + 1
+					clock = Math.max(clock, value.clock) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
 				})
 				on('events-request', ({ to, extent, given }) => {
@@ -183,7 +188,9 @@ export function make_agent(name, interleave = true) {
 					const ids = []
 					order.diff(from, extent, given, id => {
 						ids.push(id)
-						outbox.push('event', events.get(id), 'low')
+						const event = events.get(id)
+						const requested = true
+						outbox.push_later('event', { event, requested })
 					})
 					if (verbose && ids.length > 0) log(`    updated ids from "${name}" to "${to}": ${ids}`)
 				})
@@ -202,8 +209,13 @@ export function make_agent(name, interleave = true) {
 	function watch() {
 		
 		const trace = window.trace || (() => {})
-		local.on('event-sent', event => trace(`agent "${name}" emitted event ${JSON.stringify(event)}`))
+		local.on('event-sent', ({ event, requested }) => {
+			if (requested) trace(`agent "${name}" emitted event ${JSON.stringify(event)} (per request)`)
+			else trace(`agent "${name}" emitted event ${JSON.stringify(event)}`)
+		})
 		local.on('events-request-sent', event => trace(`agent "${name}" emitted events-request`))
+		local.on('members-request-received', members => log(`members request received`))
+		local.on('members-received', members => log(`members received`))
 	}
 }
 
