@@ -29,23 +29,23 @@
 	import { show, delay, settles } from 'utility'
 	
 	const $ = selector => document.querySelector(selector)
-	const reset = () => bus.emit('reset')
+	const reset = members => bus.emit('reset', members)
 	const { log } = make_console('.console')
-	let network, a, b, c
+	let network
 	let bus = make_bus()
 	window.tracer = make_tracer()
 	window.trace = message => window.tracer.trace(message)
 	watch_errors()
-	make_ui(bus)
 	
 	make_test('map').suite((it, wait) => {
 		
 		wait('sync 2 maps which have removals', then => {
 			
-			reset()
 			network = make_bus()
-			a = make_map('a', network)
-			b = make_map('b', network)
+			const members = ['a', 'b']
+			reset(members)
+			const [a, b] = make_maps(members, network)
+			make_ui(bus, [a, b])	
 			a.set('1', 1)
 			a.set('2', 1)
 			a.set('2', 2)
@@ -63,10 +63,11 @@
 		
 		wait('sync 2 maps again', then => {
 			
-			reset()
 			network = make_bus()
-			a = make_map('a', network)
-			b = make_map('b', network)
+			const members = ['a', 'b']
+			reset(members)
+			const [a, b] = make_maps(members, network)
+			make_ui(bus, [a, b])	
 			a.set('1', 1)
 			a.set('2', 1)
 			a.set('2', 2)
@@ -79,15 +80,20 @@
 		
 	}).run()
 	
-	function make_ui(bus) {
-		return
+	function make_maps(members, network) {
+		return members.map(member => make_map(member, members, network))
 	}
 	
-	function make_map(name, network, interleave = true) {
+	function make_map(member, members, network, interleave = true) {
 		
-		const agent = make_agent(name, interleave).connect(network)
-		const map = make_map_(agent)
-		return map
+		const agent = make_agent(member, interleave)
+		agent.on('connected', () => network.emit('members', members))
+		agent.connect(network)
+		return make_map_(agent)
+	}
+	
+	function make_ui(bus, maps) {
+		return
 	}
 	
 </script>

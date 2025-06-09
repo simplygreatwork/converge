@@ -35,25 +35,15 @@ export function make_agent(name, interleave = true) {
 	
 	function add(op, grouped) {
 		
-		if (verbose) log(`adding operation ${JSON.stringify(op)} to agent "${name}"`)
 		op = op || { type: null }
 		const id = [name, clock++]
-		if (verbose) log(`new id: ${id}`)
+		if (verbose) log(`adding operation ${JSON.stringify(op)} with event id: ${id}`)
 		const event = { id, op }
 		if (grouped) event.grouped = grouped
 		events.set(id, event)
 		outbox.push('event', { event }, 'high')
 		order.add(id)
 		return event
-	}
-	
-	function promote() {
-		
-		if (interleave) return
-		if (clock_system === null) clock_system = clock
-		// if (clock_system !== null) return
-		clock = Math.max(clock, clock_system) + 1
-		clock_system = null
 	}
 	
 	function connect(bus) {
@@ -85,6 +75,15 @@ export function make_agent(name, interleave = true) {
 	
 	function on() {
 		local.on(...arguments)
+	}
+	
+	function promote() {
+		
+		if (interleave) return
+		if (clock_system === null) clock_system = clock
+		// if (clock_system !== null) return
+		clock = Math.max(clock, clock_system) + 1
+		clock_system = null
 	}
 	
 	function make_outbox() {
@@ -168,8 +167,6 @@ export function make_agent(name, interleave = true) {
 				off()
 				const on = (key, fn) => offs[offs.length] = network.on(key, fn)
 				on('connected', value => log(`  "${name}" observes "${value.name}" has connected.`))
-				on('members-request', members => local.emit(`members-request-received`))
-				on('members', members => local.emit(`members-received`))
 				on('event', value => {
 					const { event, requested } = value
 					const { id } = event
@@ -177,7 +174,7 @@ export function make_agent(name, interleave = true) {
 					order.add(id)
 					agents.add(id[0])
 					if (interleave === false) clock_system = value.clock
-					// else below breaks data exchange after reconnects
+					// below, else breaks data exchange after reconnects
 					// else clock = Math.max(clock, clock_system_) + 1
 					clock = Math.max(clock, value.clock) + 1
 					if (event.id[0] !== name) local.emit('merge', [event])
@@ -194,6 +191,8 @@ export function make_agent(name, interleave = true) {
 					})
 					if (verbose && ids.length > 0) log(`    updated ids from "${name}" to "${to}": ${ids}`)
 				})
+				on('members-request', members => local.emit(`members-request-received`))
+				on('members', members => local.emit(`members-received`))
 			})
 			
 			return inbox
@@ -214,8 +213,8 @@ export function make_agent(name, interleave = true) {
 			else trace(`agent "${name}" emitted event ${JSON.stringify(event)}`)
 		})
 		local.on('events-request-sent', event => trace(`agent "${name}" emitted events-request`))
-		local.on('members-request-received', members => log(`members request received`))
-		local.on('members-received', members => log(`members received`))
+		local.on('members-request-received', members => trace(`members request received`))
+		local.on('members-received', members => trace(`members received`))
 	}
 }
 

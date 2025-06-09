@@ -7,7 +7,7 @@ export function make_map(agent, emit = () => {}) {
 	let content
 	const ops = {}
 	const map = {}
-	return Object.assign(map, { init, set, remove, merge, to_string, length, to_map }).init()
+	return Object.assign(map, { init, set, remove, to_string, length, to_map }).init()
 	
 	function init() {
 		
@@ -51,15 +51,6 @@ export function make_map(agent, emit = () => {}) {
 		op(content, event)
 		if (then) then()
 		return event.id
-	}
-	
-	function merge(other) {
-		
-		const diffs = graph.diff(other.graph())
-		graph = graph.merge(other.graph())
-		const walker = make_walker(graph, diffs)
-		walker.undo(event => apply(event, 'undo', () => {}))
-		walker.redo(event => apply(event, 'redo', () => {}))
 	}
 	
 	function to_map() {

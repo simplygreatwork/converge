@@ -30,27 +30,26 @@
 	
 	const verbose = false
 	const $ = selector => document.querySelector(selector)
-	const reset = () => bus.emit('reset')
+	const reset = members => bus.emit('reset', members)
 	const { log } = make_console('.console')
-	let network, a, b, c
+	let network
 	let bus = make_bus()
 	window.tracer = make_tracer()
 	window.trace = message => window.tracer.trace(message)
 	watch_errors()
 	log(`* Use 'tracer.dump()' in the browser console to print trace details of networking flow.\n\n`)
+	const interleave = false
+	const promote = false
 	
 	make_test('text simple').suite((it, wait) => {
 		
 		wait('sync 3 text fields with no interleaving', async (then) => {
 			
-			reset()
 			network = make_bus()
-			const interleave = false
-			a = make_list('a', network, interleave)
-			b = make_list('b', network, interleave)
-			c = make_list('c', network, interleave)
-			const lists = [a, b, c]
-			make_ui(bus, lists)
+			const members = ['a', 'b', 'c']
+			reset(members)
+			const [a, b, c] = make_lists(members, network, interleave)
+			make_ui(bus, [a, b, c])
 			a.insert('a', 'root')
 			b.insert('b', 'root')
 			c.insert('c', 'root')
@@ -58,15 +57,21 @@
 				show(a, b, c)
 				await delay(500)
 				then(settled)
-				disconnect_all(lists)
+				disconnect([a, b, c])
 			})
 		})
 		
 	}).run()
 	
-	function make_list(name, network, interleave = true) {
+	function make_lists(members, network, interleave = true) {
+		return members.map(member => make_list(member, members, network, interleave))
+	}
+	
+	function make_list(member, members, network, interleave = true) {
 		
-		const agent = make_agent(name, interleave).connect(network)
+		const agent = make_agent(member, interleave)
+		agent.on('connected', () => network.emit('members', members))
+		agent.connect(network)
 		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
 		const ids = ['root']
 		const list = Object.assign({}, list_)
@@ -99,7 +104,7 @@
 		})
 		lists.forEach(list => {
 			watch_keydown(list)
-			if (false) watch_promote(list)
+			if (promote) watch_promote(list)
 			watch_connection(list)
 		})
 		
@@ -154,7 +159,7 @@
 		}
 	}
 	
-	function disconnect_all(lists) {
+	function disconnect(lists) {
 		
 		lists.forEach(list => {
 			const element = $(`#${list.name()} [type="checkbox"]`)

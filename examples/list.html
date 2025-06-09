@@ -29,9 +29,9 @@
 	import { show, delay, settles } from 'utility'
 	
 	const $ = selector => document.querySelector(selector)
-	const reset = () => bus.emit('reset')
+	const reset = lists => bus.emit('reset', lists)
 	const { log } = make_console('.console')
-	let network, a, b, c
+	let network, shelf
 	let bus = make_bus()
 	window.tracer = make_tracer()
 	window.trace = message => window.tracer.trace(message)
@@ -43,11 +43,10 @@
 		
 		wait('sync 3 lists', then => {
 			
-			reset()
 			network = make_bus()
-			a = make_list('a', network)
-			b = make_list('b', network)
-			c = make_list('c', network)
+			const members = ['a', 'b', 'c']
+			reset(members)
+			const [a, b, c] = make_lists(members, network)
 			a.insert('a', 'root')
 			b.insert('b', 'root')
 			c.insert('c', 'root')
@@ -60,10 +59,10 @@
 		
 		wait('sync 2 lists with no interleaving', then => {
 			
-			reset()
 			network = make_bus()
-			a = make_list('a', network)
-			b = make_list('b', network)
+			const members = ['a', 'b']
+			reset(members)
+			const [a, b] = make_lists(members, network)
 			a.insert('a', 'root')
 			a.insert('b', 'root')
 			a.insert('c', 'root')
@@ -79,11 +78,10 @@
 		
 		wait('sync 3 lists with no interleaving (part 1)', then => {
 			
-			reset()
 			network = make_bus()
-			a = make_list('a', network)
-			b = make_list('b', network)
-			c = make_list('c', network)
+			const members = ['a', 'b', 'c']
+			reset(members)
+			const [a, b, c] = shelf = make_lists(members, network)
 			a.insert('a', 'root')			// insert a before root = a root
 			a.insert('e', 'root')			// insert e before root = a e root
 			a.insert('c', -1)					// insert c before the last char inserted e = a c e root
@@ -103,6 +101,7 @@
 		
 		wait('sync 3 lists with no interleaving (part 2)', then => {
 			
+			const [a, b, c] = shelf
 			b.insert('4', 'root')
 			c.insert('5', 'root')
 			c.insert('6', 'root')
@@ -115,9 +114,15 @@
 		
 	}).run()
 	
-	function make_list(name, network, interleave = true) {
+	function make_lists(members, network) {
+		return members.map(member => make_list(member, members, network))
+	}
+	
+	function make_list(member, members, network, interleave = true) {
 		
-		const agent = make_agent(name, interleave).connect(network)
+		const agent = make_agent(member, interleave)
+		agent.on('connected', () => network.emit('members', members))
+		agent.connect(network)
 		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
 		const ids = ['root']
 		const list = Object.assign({}, list_)
@@ -131,9 +136,9 @@
 		}
 	}
 	
-	function make_ui(bus) {
+	function make_ui(bus, members) {
 		
-		bus.on(`reset`, change => {
+		bus.on(`reset`, members => {
 			$(`#a span`).innerText = ``
 			$(`#b span`).innerText = ``
 			$(`#c span`).innerText = ``

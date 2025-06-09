@@ -22,9 +22,9 @@
 	import { show, delay, settles } from 'utility'
 	
 	const $ = selector => document.querySelector(selector)
-	const reset = () => bus.emit('reset')
+	const reset = members => bus.emit('reset', members)
 	const { log } = make_console('.console')
-	let network, a, b, c, d
+	let network
 	let bus = make_bus()
 	window.tracer = make_tracer()
 	window.trace = message => window.tracer.trace(message)
@@ -34,12 +34,10 @@
 		
 		wait('connect 4 lists and show member agents of each', then => {
 			
-			reset()
 			network = make_bus()
-			a = make_list('a', network)
-			b = make_list('b', network)
-			c = make_list('c', network)
-			d = make_list('d', network)
+			const members = ['a', 'b', 'c', 'd']
+			reset(members)
+			const [a, b, c, d] = make_lists(members, network)
 			b.insert('b')
 			a.insert('a')
 			c.insert('c')
@@ -54,9 +52,15 @@
 		
 	}).run()
 	
-	function make_list(name, network, interleave = true) {
+	function make_lists(members, network) {
+		return members.map(member => make_list(member, members, network))
+	}
+	
+	function make_list(member, members, network, interleave = true) {
 		
-		const agent = make_agent(name, interleave).connect(network)
+		const agent = make_agent(member, interleave)
+		agent.on('connected', () => network.emit('members', members))
+		agent.connect(network)
 		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
 		const ids = ['root']
 		const list = Object.assign({}, list_)

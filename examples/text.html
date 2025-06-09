@@ -30,9 +30,9 @@
 	
 	const verbose = false
 	const $ = selector => document.querySelector(selector)
-	const reset = () => bus.emit('reset')
+	const reset = members => bus.emit('reset', members)
 	const { log } = make_console('.console')
-	let network, a, b, c
+	let network
 	let bus = make_bus()
 	window.tracer = make_tracer()
 	window.trace = message => window.tracer.trace(message)
@@ -45,11 +45,10 @@
 		
 		wait('sync 3 text fields with no interleaving', async (then) => {
 			
-			reset()
 			network = make_bus()
-			a = make_list('a', network, interleave)
-			b = make_list('b', network, interleave)
-			c = make_list('c', network, interleave)
+			const members = ['a', 'b', 'c']
+			reset(members)
+			const [a, b, c] = make_lists(members, network, interleave)
 			make_ui(bus, [a, b, c])
 			a.insert('o', 'root')
 			a.insert('n', 'root')
@@ -88,9 +87,15 @@
 		
 	}).run()
 	
-	function make_list(name, network, interleave = true) {
+	function make_lists(members, network, interleave = true) {
+		return members.map(member => make_list(member, members, network, interleave))
+	}
+	
+	function make_list(member, members, network, interleave = true) {
 		
-		const agent = make_agent(name, interleave).connect(network)
+		const agent = make_agent(member, interleave)
+		agent.on('connected', () => network.emit('members', members))
+		agent.connect(network)
 		const list_ = make_list_(agent, (key, value) => bus.emit(key, value))
 		const ids = ['root']
 		const list = Object.assign({}, list_)
