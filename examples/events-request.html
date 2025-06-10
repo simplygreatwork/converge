@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>events request</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"develop": "../system/develop.js",
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"utility": "../system/utility.js"
+}}</script>
+<script type="module">
+	
+	import { make_console, make_test, make_tracer, watch_errors } from 'develop'
+	import { make_agent as make_agent_ } from 'agent'
+	import { make_bus } from 'bus'
+	import { show, delay, settles } from 'utility'
+	
+	const $ = selector => document.querySelector(selector)
+	const reset = () => bus.emit('reset')
+	const { log } = make_console('body')
+	let network
+	let bus = make_bus()
+	window.tracer = make_tracer()
+	window.trace = message => window.tracer.trace(message)
+	watch_errors()
+	log(`* Use 'tracer.dump()' in the browser console to print trace details of networking flow.\n\n`)
+	
+	make_test('events request').suite((it, wait) => {
+		
+		wait('extract', async then => {
+			
+			network = make_bus()
+			const members = ['a', 'b']
+			const [a, b] = make_agents(members, network)
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			console.log(`extraction: ${JSON.stringify(a.order().extract('a', 0))}`)
+			console.log(`extraction: ${JSON.stringify(a.order().extract('a', 2))}`)
+			then(true)
+		})
+		
+		wait('diff', async then => {
+			
+			network = make_bus()
+			const members = ['a', 'b']
+			const [a, b] = make_agents(members, network)
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			a.add()
+			const ids = []
+			a.order().diff('a', 5, [5, 7, 9], id => {
+				console.log(`missing id: ${id}`)
+				ids.push(id)
+			})
+			then(ids.toString() === 'a,6,a,8')
+		})
+		
+		wait('disconnect + reconnect', async then => {
+			
+			tracer.clear()
+			network = make_bus()
+			const members = ['a', 'b']
+			const [a, b] = make_agents(members, network)
+			a.add()
+			a.add()
+			a.add()
+			a.disconnect()
+			b.disconnect()
+			await delay(300)
+			a.add()							// agents a & b are both offline now
+			a.add()							// so agent a will not currently emit any events it creates and queues
+			a.add()
+			await delay(300)
+			a.connect(network)			// agent a will emit its queued events now, however agent b is still offline
+			await delay(300)			
+			b.connect(network)			// when agent b reconnects it will emit an events-request to ask for agent a's events
+			
+			settles([a, b], `[[["a",0]],[["a",1]],[["a",2]],[["a",6]],[["a",7]],[["a",8]]]`, async settled => {
+				show(a, b)
+				await delay(300)
+				then(settled)
+			})
+		})
+		
+	}).run()
+	
+	function make_agents(members, network) {
+		return members.map(member => make_agent(member, members, network))
+	}
+	
+	function make_agent(member, members, network) {
+		
+		const agent = make_agent_(member)
+		agent.on('connected', () => network.emit('members', members))
+		agent.connect(network)
+		return agent
+	}
+	
+	function matches(a, b) {
+		return a.to_string() === b.to_string()
+	}
+	
+</script>
+</body>
+</html>

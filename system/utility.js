@@ -2,7 +2,7 @@
 export function show() {
 	
 	Array.from(arguments).forEach(each => {
-		console.log(`  ${each.name()}: ${JSON.stringify(each.to_string())}`)
+		console.log(`  ${each.name()}: ${each.to_string()}`)
 	})
 }
 

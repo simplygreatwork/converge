@@ -132,7 +132,7 @@ export function make_tracer() {
 	
 	const lines = []
 	const tracer = {}
-	return Object.assign(tracer, { trace, dump })
+	return Object.assign(tracer, { trace, dump, clear })
 	
 	function trace(message) {
 		lines.push(message)
@@ -142,6 +142,10 @@ export function make_tracer() {
 		
 		console.log('\n*** TRACER DUMP ***\n')
 		lines.forEach(each => console.log(each)) 
+	}
+	
+	function clear() {
+		lines.splice(0, lines.length) 
 	}
 }
 

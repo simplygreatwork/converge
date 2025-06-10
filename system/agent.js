@@ -3,7 +3,7 @@ import { make_bus } from 'bus'
 import { make_order } from 'order'
 
 const verbose = false
-const log = console.log
+const log = message => console.log(message)
 
 export function make_agent(name, interleave = true) {
 	
@@ -70,7 +70,7 @@ export function make_agent(name, interleave = true) {
 	}
 	
 	function to_string() {
-		return `Agent "${name}": ${order.to_string()}`
+		return order.to_string()
 	}
 	
 	function on() {
@@ -100,7 +100,7 @@ export function make_agent(name, interleave = true) {
 				if (verbose) log(`  "Agent ${name}" has connected with queue high "${JSON.stringify(high)}" and queue low "${JSON.stringify(low)}"`)
 				push('connected', { name })
 				request_members()
-				request_updates()
+				request_events()
 				run()
 			})
 			return outbox
@@ -110,7 +110,7 @@ export function make_agent(name, interleave = true) {
 			network.emit('members-request')
 		}
 		
-		function request_updates() {
+		function request_events() {
 			
 			Array.from(agents).forEach(agent => {
 				if (agent === name) return
@@ -170,9 +170,12 @@ export function make_agent(name, interleave = true) {
 				on('event', value => {
 					const { event, requested } = value
 					const { id } = event
+					const [ agent_, clock_ ] = id
 					events.set(id, event)
 					order.add(id)
-					agents.add(id[0])
+					agents.add(agent_)
+					extents[agent_] = extents[agent_] || 0
+					extents[agent_] = Math.max(extents[agent_], clock_) + 1
 					if (interleave === false) clock_system = value.clock
 					// below, else breaks data exchange after reconnects
 					// else clock = Math.max(clock, clock_system_) + 1
@@ -212,9 +215,9 @@ export function make_agent(name, interleave = true) {
 			if (requested) trace(`agent "${name}" emitted event ${JSON.stringify(event)} (per request)`)
 			else trace(`agent "${name}" emitted event ${JSON.stringify(event)}`)
 		})
-		local.on('events-request-sent', event => trace(`agent "${name}" emitted events-request`))
-		local.on('members-request-received', members => trace(`members request received`))
-		local.on('members-received', members => trace(`members received`))
+		local.on('events-request-sent', ({ to, extent, given }) => trace(`agent "${name}" emitted events-request ${JSON.stringify({ to, extent, given })}`))
+		if (false) local.on('members-request-received', members => trace(`members request received`))
+		if (false)local.on('members-received', members => trace(`members received`))
 	}
 }
 
