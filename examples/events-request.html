@@ -80,13 +80,13 @@
 			a.disconnect()
 			b.disconnect()
 			await delay(300)
-			a.add()							// agents a & b are both offline now
-			a.add()							// so agent a will not currently emit any events it creates and queues
+			a.add()                    // agents a & b are both offline now
+			a.add()                    // so agent a will not currently emit any events it creates and queues
 			a.add()
 			await delay(300)
-			a.connect(network)			// agent a will emit its queued events now, however agent b is still offline
+			a.connect(network)         // agent a will emit its queued events now, however agent b is still offline
 			await delay(300)			
-			b.connect(network)			// when agent b reconnects it will emit an events-request to ask for agent a's events
+			b.connect(network)         // when agent b reconnects it will emit an events-request to ask for agent a's events
 			
 			settles([a, b], `[[["a",0]],[["a",1]],[["a",2]],[["a",6]],[["a",7]],[["a",8]]]`, async settled => {
 				show(a, b)
