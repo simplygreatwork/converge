@@ -34,20 +34,20 @@ export function make_map(agent, emit = () => {}) {
 	
 	function set(key, value) {
 		
-		const event = agent.add({ type: 'set', key, value })
+		const event = agent.add({ name: 'set', key, value })
 		return apply(event, 'redo', () => emit('set', { value, map }))
 	}
 	
 	function remove(key) {
 		
-		const event = agent.add({ type: 'remove', remove: key })
+		const event = agent.add({ name: 'remove', remove: key })
 		return apply(event, 'redo', () => emit('remove', { key, map }))
 	}
 	
 	function apply(event, method, then) {
 		
-		const type = event.op.type
-		const op = ops[[type, method]]
+		const name = event.op.name
+		const op = ops[[name, method]]
 		op(content, event)
 		if (then) then()
 		return event.id

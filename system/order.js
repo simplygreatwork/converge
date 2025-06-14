@@ -1,6 +1,6 @@
 
 const verbose = false
-const log = console.log
+const log = message => console.log(message)
 
 export function make_order(events) {
 	

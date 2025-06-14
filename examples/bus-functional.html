@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>bus request</title>
+</head>
+<body>
+<script type="importmap">{"imports": {
+	"develop": "../system/develop.js",
+	"bus": "../system/bus.js",
+	"agent": "../system/agent.js",
+	"order": "../system/order.js",
+	"utility": "../system/utility.js"
+}}</script>
+<script type="module">
+	
+	import { make_console, make_test, watch_errors } from 'develop'
+	import { make_bus as make_bus } from 'bus'
+	
+	const { log } = make_console('body')
+	watch_errors()
+	
+	// instead of emit_ & on_, go ahead and and fully extend/wrap emit & on of bus
+	// and be able to use this bus even if no then supplied
+	
+	make_test('bus request').suite((it, wait) => {
+		
+		wait('bus request', async then => {
+			
+			const bus = make_result_bus()
+			bus.on('test', value => {
+				return value + `!!!`
+			})
+			
+			bus.emit('test', 'abc', result => {
+				console.log(`test result: ${result}`)
+				then(true)
+			})
+		})
+		
+		wait('bus request', async then => {
+			
+			const bus = make_result_bus()
+			bus.on('test', (value1, value2) => {
+				return value1 + value2 + `!!!`
+			})
+			
+			bus.emit('test', 'abc', '123', result => {
+				console.log(`test result: ${result}`)
+				then(true)
+			})
+		})
+		
+	}).run()
+	
+	function make_result_bus() {
+		
+		const bus = make_bus()
+		bus.on_ = bus.on.bind(bus)
+		bus.emit_ = bus.emit.bind(bus)
+		
+		bus.on = (key, fn) => {
+			bus.on_(`input:${key}`, (...arguments_) => {
+				bus.emit_(`output:${key}`, fn(...arguments_))
+			})
+		}
+		
+		bus.emit = (...arguments_) => {
+			const key = arguments_.shift()
+			const then = arguments_.pop()
+			bus.on_(`output:${key}`, result => then(result))
+			bus.emit_(`input:${key}`, ...arguments_)
+		}
+		
+		return bus
+	}
+	
+</script>
+</body>
+</html>

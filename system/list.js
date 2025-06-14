@@ -20,8 +20,8 @@ export function make_list(agent, emit = () => {}) {
 			walker.redo(event => apply(event, 'redo', () => {}))
 			emit('change', { type: 'merge', diffs, list })
 		})
-		list.name = () => agent.name()
 		list.agent = () => agent
+		list.name = () => agent.name()
 		list.promote = () => agent.promote()
 		return list
 	}
@@ -36,21 +36,21 @@ export function make_list(agent, emit = () => {}) {
 	
 	function insert(value, parent = 'root', grouped) {
 		
-		const event = agent.add({ type: 'insert', value, parent }, grouped)
+		const event = agent.add({ name: 'insert', value, parent }, grouped)
 		if (false) console.log(`index3: ${index_at_node(value)}`)
-		return apply(event, 'redo', () => emit('change', { type: 'insert', value, parent, list }))
+		return apply(event, 'redo', () => emit('change', { name: 'insert', value, parent, list }))
 	}
 	
 	function remove(id) {
 		
-		const event = agent.add({ type: 'remove', remove: id })
-		return apply(event, 'redo', () => emit('change', { type: 'remove', remove: id, list }))
+		const event = agent.add({ name: 'remove', remove: id })
+		return apply(event, 'redo', () => emit('change', { name: 'remove', remove: id, list }))
 	}
 	
 	function apply(event, method, then) {
 		
-		const type = event.op.type
-		const op = ops[[type, method]]
+		const name = event.op.name
+		const op = ops[[name, method]]
 		op(content, event)
 		if (then) then()
 		return event.id

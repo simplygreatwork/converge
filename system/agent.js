@@ -39,8 +39,8 @@ export function make_agent(name, interleave = true) {
 		if (verbose) log(`adding operation ${JSON.stringify(op)} with event id: ${id}`)
 		const event = { id, op }
 		events.set(id, event)
-		outbox.push('event', { event }, 'high')
 		order.add(id)
+		outbox.push('event', { event })
 		return event
 	}
 	
@@ -56,9 +56,9 @@ export function make_agent(name, interleave = true) {
 		const result = network
 		return new Promise(resolve => {
 			outbox.flush()
+			inbox.off()
 			network = null
 			local.emit('disconnected')
-			inbox.off()
 			setTimeout(() => resolve(result), 100)
 		})
 	}
@@ -209,7 +209,6 @@ export function make_agent(name, interleave = true) {
 				const requested = true
 				outbox.push_later('event', { event, requested })
 			})
-			if (verbose && ids.length > 0) log(`    updated ids from "${name}" to "${to}": ${ids}`)
 		}
 		
 		function members(members) {
